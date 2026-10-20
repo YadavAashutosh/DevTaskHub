@@ -213,3 +213,42 @@ In ASP.NET Core MVC, views provide the visual presentation layer for user intera
 3. Created `Create.cshtml` with input fields, select dropdowns, and validation spans.
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
 
+
+
+---
+
+## 🎯 Step 7: Run Application, Test Validation, and Merge to `main`
+### 📖 Concept Summary:
+Verification ensures that client-side and server-side validation behave as intended before pushing to production:
+* Navigation updated in `Views/Shared/_Layout.cshtml` with link to `TasksController.Index`.
+* Verified validation rules:
+  - Blank input triggers `[Required]` error message.
+  - Length violations trigger `[StringLength]` error message.
+  - Valid input passes `ModelState.IsValid`, adds to task list, and redirects to `Index`.
+* Option B workflow executed: Feature branch merged into `main` and pushed to GitHub remote (`origin/main`).
+
+### 💻 Action to do:
+1. Added navbar item for Tasks in `_Layout.cshtml`.
+2. Tested form in browser with both invalid and valid submissions.
+3. In GitHub Desktop, committed all changes, switched to `main`, merged `feature/day1-database-forms`, and pushed origin.
+* **Status:** Verified ✅ (Git remote `origin/main` at commit `9101694`)
+
+
+---
+
+## 🎯 Step 7: Run Application, Test Validation, and Merge to `main`
+### 📖 Concept Summary:
+Verification ensures that client-side and server-side validation behave as intended before pushing to production:
+* Navigation updated in `Views/Shared/_Layout.cshtml` with link to `TasksController.Index`.
+* Verified validation rules:
+  - Blank input triggers `[Required]` error message.
+  - Length violations trigger `[StringLength]` error message.
+  - Valid input passes `ModelState.IsValid`, adds to task list, and redirects to `Index`.
+* Option B workflow executed: Feature branch merged into `main` and pushed to GitHub remote (`origin/main`).
+
+### 💻 Action to do:
+1. Added navbar item for Tasks in `_Layout.cshtml`.
+2. Tested form in browser with both invalid and valid submissions.
+3. In GitHub Desktop, committed all changes, switched to `main`, merged `feature/day1-database-forms`, and pushed origin.
+* **Status:** Verified ✅ (Git remote `origin/main` at commit `9101694`)
+
