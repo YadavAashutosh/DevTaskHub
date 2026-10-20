@@ -141,3 +141,42 @@ Instead, we use a ViewModel (`CreateTaskViewModel`):
 4. Name the file: `CreateTaskViewModel.cs`
 5. Added properties for `Title`, `Description`, `Status`, `Priority`, `GitHubPrNumber`, and `ProjectId` with DataAnnotations.
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 5: TasksController (Handling Form Submission & Validation)
+### 📖 Concept Summary:
+A Controller in ASP.NET Core receives HTTP requests from the browser, processes logic, and returns Views or redirects.
+For our Task feature, `TasksController` manages:
+* `GET: /Tasks` (Index): Returns a table of all tasks.
+* `GET: /Tasks/Create`: Displays the blank HTML form for task creation.
+* `POST: /Tasks/Create`: Validates incoming data using `ModelState.IsValid`. If invalid, re-renders the form with error messages; if valid, saves the task to the list and redirects to `Index`.
+* `[ValidateAntiForgeryToken]`: Provides cross-site request forgery security.
+
+### 💻 Action to do:
+1. In Visual Studio, inside `DevTaskHub.Web`, right-click on the `Controllers` folder → Add → Controller...
+2. Choose "MVC Controller - Empty" → click Add.
+3. Name it: `TasksController.cs`
+4. Added actions: `Index()`, `Create()` [HttpGet], and `Create(CreateTaskViewModel model)` [HttpPost].
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 5: TasksController (Handling Form Submission & Validation)
+### 📖 Concept Summary:
+A Controller in ASP.NET Core receives HTTP requests from the browser, processes logic, and returns Views or redirects.
+For our Task feature, `TasksController` manages:
+* `GET: /Tasks` (Index): Returns a table of all tasks.
+* `GET: /Tasks/Create`: Displays the blank HTML form for task creation.
+* `POST: /Tasks/Create`: Validates incoming data using `ModelState.IsValid`. If invalid, re-renders the form with error messages; if valid, saves the task to the list and redirects to `Index`.
+* `[ValidateAntiForgeryToken]`: Provides cross-site request forgery security.
+
+### 💻 Action to do:
+1. In Visual Studio, inside `DevTaskHub.Web`, right-click on the `Controllers` folder → Add → Controller...
+2. Choose "MVC Controller - Empty" → click Add.
+3. Name it: `TasksController.cs`
+4. Added actions: `Index()`, `Create()` [HttpGet], and `Create(CreateTaskViewModel model)` [HttpPost].
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
