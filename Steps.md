@@ -180,3 +180,36 @@ For our Task feature, `TasksController` manages:
 4. Added actions: `Index()`, `Create()` [HttpGet], and `Create(CreateTaskViewModel model)` [HttpPost].
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
 
+
+
+---
+
+## 🎯 Step 6: Create Razor Views (`Index.cshtml` & `Create.cshtml`)
+### 📖 Concept Summary:
+In ASP.NET Core MVC, views provide the visual presentation layer for user interactions:
+* `Views/Tasks/Index.cshtml`: Displays a clean table listing all tasks with styled badges for Priority and Status.
+* `Views/Tasks/Create.cshtml`: Form configured with Tag Helpers (`asp-for`, `asp-validation-for`, `asp-action`) to collect input and display validation errors.
+* `_ValidationScriptsPartial`: Enables instantaneous client-side validation using jQuery Unobtrusive Validation without requiring full page roundtrips.
+
+### 💻 Action to do:
+1. Created `Views/Tasks/` folder.
+2. Created `Index.cshtml` with Bootstrap table for task lists.
+3. Created `Create.cshtml` with input fields, select dropdowns, and validation spans.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 6: Create Razor Views (`Index.cshtml` & `Create.cshtml`)
+### 📖 Concept Summary:
+In ASP.NET Core MVC, views provide the visual presentation layer for user interactions:
+* `Views/Tasks/Index.cshtml`: Displays a clean table listing all tasks with styled badges for Priority and Status.
+* `Views/Tasks/Create.cshtml`: Form configured with Tag Helpers (`asp-for`, `asp-validation-for`, `asp-action`) to collect input and display validation errors.
+* `_ValidationScriptsPartial`: Enables instantaneous client-side validation using jQuery Unobtrusive Validation without requiring full page roundtrips.
+
+### 💻 Action to do:
+1. Created `Views/Tasks/` folder.
+2. Created `Index.cshtml` with Bootstrap table for task lists.
+3. Created `Create.cshtml` with input fields, select dropdowns, and validation spans.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+

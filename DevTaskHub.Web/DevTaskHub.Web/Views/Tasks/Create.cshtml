@@ -1,0 +1,86 @@
+﻿@model DevTaskHub.Web.Models.CreateTaskViewModel
+
+@{
+    ViewData["Title"] = "Create Task";
+}
+
+<div class="container mt-4" style="max-width: 600px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">📝 Create New Task</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Validation Summary (Top banner for global errors) -->
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <!-- Title -->
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-bold"></label>
+                    <input asp-for="Title" class="form-control" placeholder="e.g. Implement Login API" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-bold"></label>
+                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Task details and acceptance criteria..."></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <!-- Status & Priority Row -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Status" class="form-label fw-bold"></label>
+                        <select asp-for="Status" class="form-select">
+                            <option value="Todo">Todo</option>
+                            <option value="InProgress">InProgress</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Priority" class="form-label fw-bold"></label>
+                        <select asp-for="Priority" class="form-select">
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                        <span asp-validation-for="Priority" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- GitHub PR # & ProjectId Row -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="GitHubPrNumber" class="form-label fw-bold"></label>
+                        <input asp-for="GitHubPrNumber" class="form-control" type="number" placeholder="e.g. 42" />
+                        <span asp-validation-for="GitHubPrNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ProjectId" class="form-label fw-bold"></label>
+                        <select asp-for="ProjectId" class="form-select">
+                            <option value="1">1 - DevTask Hub Web</option>
+                            <option value="2">2 - Core API Service</option>
+                        </select>
+                        <span asp-validation-for="ProjectId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Back to Tasks</a>
+                    <button type="submit" class="btn btn-success">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
