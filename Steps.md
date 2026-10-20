@@ -119,3 +119,25 @@ GO
 ```
 * **Status:** Verified ✅ (Returned 2 rows successfully)
 
+
+
+---
+
+## 🎯 Step 4: C# ViewModel & Form Validation Rules (Day 1 Task 2)
+### 📖 Concept Summary:
+In ASP.NET Core MVC, we should never bind raw HTML inputs directly to database entity classes when receiving form data. 
+Instead, we use a ViewModel (`CreateTaskViewModel`):
+* It acts as a clean contract for only the data coming from the user's browser.
+* We decorate properties with Data Annotations (`[Required]`, `[StringLength]`, `[Range]`):
+  * `[Required]`: Guarantees the user cannot leave the field blank.
+  * `[StringLength(100, MinimumLength = 3)]`: Prevents titles that are too short (less than 3 characters) or too long (more than 100).
+  * `[Range(1, int.MaxValue)]`: Ensures the GitHub PR number, if entered, is a positive number (like `#42`, not negative).
+  * ASP.NET Core checks these rules automatically before your controller touches the data.
+
+### 💻 Action to do:
+1. Open Visual Studio.
+2. In Solution Explorer, look inside the `DevTaskHub.Web` project.
+3. Right-click on the `Models` folder → Add → Class...
+4. Name the file: `CreateTaskViewModel.cs`
+5. Added properties for `Title`, `Description`, `Status`, `Priority`, `GitHubPrNumber`, and `ProjectId` with DataAnnotations.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
