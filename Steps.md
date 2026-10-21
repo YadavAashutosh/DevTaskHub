@@ -252,3 +252,189 @@ Verification ensures that client-side and server-side validation behave as inten
 3. In GitHub Desktop, committed all changes, switched to `main`, merged `feature/day1-database-forms`, and pushed origin.
 * **Status:** Verified ✅ (Git remote `origin/main` at commit `9101694`)
 
+
+
+---
+
+## 🎯 Step 8: Create Day 2 Feature Branch
+### 📖 Concept Summary:
+Following the Option B branching strategy, a fresh feature branch (`feature/day2-webapi-efcore`) was created off `main`. This isolates the Day 2 deliverables (Web API, DTOs, EF Core, and Repository Layer) from production code on `main`.
+
+### 💻 Action to do:
+1. Switched to `main` in GitHub Desktop.
+2. Created and checked out new branch: `feature/day2-webapi-efcore`.
+* **Status:** Verified ✅
+
+
+---
+
+## 🎯 Step 8: Create Day 2 Feature Branch
+### 📖 Concept Summary:
+Following the Option B branching strategy, a fresh feature branch (`feature/day2-webapi-efcore`) was created off `main`. This isolates the Day 2 deliverables (Web API, DTOs, EF Core, and Repository Layer) from production code on `main`.
+
+### 💻 Action to do:
+1. Switched to `main` in GitHub Desktop.
+2. Created and checked out new branch: `feature/day2-webapi-efcore`.
+* **Status:** Verified ✅
+
+
+
+---
+
+## 🎯 Step 9: Install Entity Framework Core NuGet Packages
+### 📖 Concept Summary:
+To enable ORM capabilities, database connectivity, and Code-First migrations, three foundational EF Core packages were installed:
+* `Microsoft.EntityFrameworkCore.SqlServer`: SQL Server database provider.
+* `Microsoft.EntityFrameworkCore.Tools`: PowerShell cmdlets for migrations inside Visual Studio.
+* `Microsoft.EntityFrameworkCore.Design`: Design-time logic for scaffolding and migration generation.
+
+### 💻 Action to do:
+Installed `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, and `Microsoft.EntityFrameworkCore.Design` via NuGet Package Manager.
+* **Status:** Verified ✅ (Packages restored and project build clean)
+
+
+---
+
+## 🎯 Step 9: Install Entity Framework Core NuGet Packages
+### 📖 Concept Summary:
+To enable ORM capabilities, database connectivity, and Code-First migrations, three foundational EF Core packages were installed:
+* `Microsoft.EntityFrameworkCore.SqlServer`: SQL Server database provider.
+* `Microsoft.EntityFrameworkCore.Tools`: PowerShell cmdlets for migrations inside Visual Studio.
+* `Microsoft.EntityFrameworkCore.Design`: Design-time logic for scaffolding and migration generation.
+
+### 💻 Action to do:
+Installed `Microsoft.EntityFrameworkCore.SqlServer`, `Microsoft.EntityFrameworkCore.Tools`, and `Microsoft.EntityFrameworkCore.Design` via NuGet Package Manager.
+* **Status:** Verified ✅ (Packages restored and project build clean)
+
+
+
+---
+
+## 🎯 Step 10: Create Production-Ready Entity Models (`User.cs`, `Project.cs`, `TaskItem.cs`)
+### 📖 Concept Summary:
+Created the core domain entities matching the final architecture and SQL Server relational schema:
+* `User.cs`: ID, Email, PasswordHash, Role (Admin/Developer), GitHubUsername, IsActive, CreatedAt, and navigation collection for assigned tasks.
+* `Project.cs`: ID, Name, Description, GitHubRepoOwner, GitHubRepoName, CreatedAt, and navigation collection for project tasks.
+* `TaskItem.cs`: ID, Title, Description, Status, Priority, GitHubPrNumber, DueDate, CreatedAt, UpdatedAt, and Foreign Keys with navigation properties for `Project` and `AssignedUser`.
+
+### 💻 Action to do:
+Created `Models/User.cs`, `Models/Project.cs`, and `Models/TaskItem.cs` with validation attributes and navigation properties.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 10: Create Production-Ready Entity Models (`User.cs`, `Project.cs`, `TaskItem.cs`)
+### 📖 Concept Summary:
+Created the core domain entities matching the final architecture and SQL Server relational schema:
+* `User.cs`: ID, Email, PasswordHash, Role (Admin/Developer), GitHubUsername, IsActive, CreatedAt, and navigation collection for assigned tasks.
+* `Project.cs`: ID, Name, Description, GitHubRepoOwner, GitHubRepoName, CreatedAt, and navigation collection for project tasks.
+* `TaskItem.cs`: ID, Title, Description, Status, Priority, GitHubPrNumber, DueDate, CreatedAt, UpdatedAt, and Foreign Keys with navigation properties for `Project` and `AssignedUser`.
+
+### 💻 Action to do:
+Created `Models/User.cs`, `Models/Project.cs`, and `Models/TaskItem.cs` with validation attributes and navigation properties.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+
+---
+
+## 🎯 Step 11: Create AppDbContext & Register EF Core (Task 5)
+### 📖 Concept Summary:
+Established the database context and connection pipeline:
+* `Data/AppDbContext.cs`: Configured entity sets (`Users`, `Projects`, `Tasks`) and Fluent API relationships (Foreign keys, Cascade delete on project removal, SetNull on user removal).
+* `appsettings.json`: Added `ConnectionStrings:DefaultConnection` targeting `Server=.\\SQLEXPRESS01;Database=DevTaskHubDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True`.
+* `Program.cs`: Registered `AppDbContext` into dependency injection container via `builder.Services.AddDbContext<AppDbContext>()`.
+
+### 💻 Action to do:
+1. Created `Data/AppDbContext.cs` with DbSets and model configurations.
+2. Configured SQL Server connection string in `appsettings.json`.
+3. Registered DbContext in `Program.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 11: Create AppDbContext & Register EF Core (Task 5)
+### 📖 Concept Summary:
+Established the database context and connection pipeline:
+* `Data/AppDbContext.cs`: Configured entity sets (`Users`, `Projects`, `Tasks`) and Fluent API relationships (Foreign keys, Cascade delete on project removal, SetNull on user removal).
+* `appsettings.json`: Added `ConnectionStrings:DefaultConnection` targeting `Server=.\\SQLEXPRESS01;Database=DevTaskHubDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True`.
+* `Program.cs`: Registered `AppDbContext` into dependency injection container via `builder.Services.AddDbContext<AppDbContext>()`.
+
+### 💻 Action to do:
+1. Created `Data/AppDbContext.cs` with DbSets and model configurations.
+2. Configured SQL Server connection string in `appsettings.json`.
+3. Registered DbContext in `Program.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+
+---
+
+## 🎯 Step 11.1: Enterprise Security & Configuration Hardening
+### 📖 Concept Summary:
+Aligned application secret handling with 20-year Senior Principal Architecture standards and `Project Description` instructions (line 77):
+* Base configuration (`appsettings.json`): Sanitized into a production template using placeholder server names (`Server=YOUR_SERVER;...`) to prevent secret leakage on GitHub.
+* Development override (`appsettings.Development.json`): Configured with local workstation SQL Server connection string (`Server=.\\SQLEXPRESS01;...`) for active debugging.
+* `.gitignore`: Enriched with security rules preventing accidental commit of local environment files (`*.local.json`, `appsettings.*.local.json`, `.env`, `.env.*`).
+
+### 💻 Action to do:
+1. Updated `appsettings.json` with sanitized connection string placeholder.
+2. Configured actual SQL connection string in `appsettings.Development.json`.
+3. Added security override patterns to `.gitignore`.
+* **Status:** Verified ✅
+
+
+---
+
+## 🎯 Step 11.1: Enterprise Security & Configuration Hardening
+### 📖 Concept Summary:
+Aligned application secret handling with 20-year Senior Principal Architecture standards and `Project Description` instructions (line 77):
+* Base configuration (`appsettings.json`): Sanitized into a production template using placeholder server names (`Server=YOUR_SERVER;...`) to prevent secret leakage on GitHub.
+* Development override (`appsettings.Development.json`): Configured with local workstation SQL Server connection string (`Server=.\\SQLEXPRESS01;...`) for active debugging.
+* `.gitignore`: Enriched with security rules preventing accidental commit of local environment files (`*.local.json`, `appsettings.*.local.json`, `.env`, `.env.*`).
+
+### 💻 Action to do:
+1. Updated `appsettings.json` with sanitized connection string placeholder.
+2. Configured actual SQL connection string in `appsettings.Development.json`.
+3. Added security override patterns to `.gitignore`.
+* **Status:** Verified ✅
+
+
+
+---
+
+## 🎯 Step 12: Initial EF Core Migration & Database Sync (Task 6 Part 1)
+### 📖 Concept Summary:
+Generated and applied the baseline Code-First database migration:
+* Executed `dotnet ef migrations add InitialCreate -o Data/Migrations`.
+* EF Core created migration files mapping the enriched domain schema (`Projects`, `Users`, `Tasks`) with Foreign Keys, Cascade/SetNull delete behaviors, and Indexes (`IX_Tasks_AssignedUserId`, `IX_Tasks_ProjectId`).
+* Applied migration to database using `dotnet ef database update`.
+* Verified `__EFMigrationsHistory` table records migration `20261021065557_InitialCreate`.
+
+### 💻 Action to do:
+1. Navigated to `DevTaskHub.Web` project directory.
+2. Dropped raw SQL practice tables in SSMS to allow clean Code-First schema ownership.
+3. Executed `dotnet ef migrations add InitialCreate -o Data/Migrations`.
+4. Executed `dotnet ef database update`.
+* **Status:** Verified ✅ (Database schema synced and migration history active)
+
+
+---
+
+## 🎯 Step 12: Initial EF Core Migration & Database Sync (Task 6 Part 1)
+### 📖 Concept Summary:
+Generated and applied the baseline Code-First database migration:
+* Executed `dotnet ef migrations add InitialCreate -o Data/Migrations`.
+* EF Core created migration files mapping the enriched domain schema (`Projects`, `Users`, `Tasks`) with Foreign Keys, Cascade/SetNull delete behaviors, and Indexes (`IX_Tasks_AssignedUserId`, `IX_Tasks_ProjectId`).
+* Applied migration to database using `dotnet ef database update`.
+* Verified `__EFMigrationsHistory` table records migration `20261021065557_InitialCreate`.
+
+### 💻 Action to do:
+1. Navigated to `DevTaskHub.Web` project directory.
+2. Dropped raw SQL practice tables in SSMS to allow clean Code-First schema ownership.
+3. Executed `dotnet ef migrations add InitialCreate -o Data/Migrations`.
+4. Executed `dotnet ef database update`.
+* **Status:** Verified ✅ (Database schema synced and migration history active)
+
