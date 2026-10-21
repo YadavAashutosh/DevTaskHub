@@ -1,31 +1,27 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Models;
+using DevTaskHub.Web.Services;
 
 namespace DevTaskHub.Web.Controllers
 {
     public class TasksController : Controller
     {
-        // In-memory list for Day 1 validation practice (replaced by EF Core in Day 2)
-        private static readonly List<CreateTaskViewModel> _tasks = new()
-        {
-            new CreateTaskViewModel
-            {
-                Title = "Setup Database Schema",
-                Description = "Create initial SQL Server tables with FKs",
-                Status = "Done",
-                Priority = "High",
-                GitHubPrNumber = 101,
-                ProjectId = 1
-            }
-        };
+        private readonly ITaskService _taskService;
 
-        // GET: /Tasks
-        public IActionResult Index()
+        public TasksController(ITaskService taskService)
         {
-            return View(_tasks);
+            _taskService = taskService;
         }
 
-        // GET: /Tasks/Create (Loads blank form)
+        // GET: /Tasks
+        public async Task<IActionResult> Index()
+        {
+            var tasks = await _taskService.GetAllTasksAsync();
+            return View(tasks);
+        }
+
+        // GET: /Tasks/Create
         [HttpGet]
         public IActionResult Create()
         {
@@ -33,22 +29,29 @@ namespace DevTaskHub.Web.Controllers
             return View(model);
         }
 
-        // POST: /Tasks/Create (Validates and saves form)
+        // POST: /Tasks/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(CreateTaskViewModel model)
+        public async Task<IActionResult> Create(CreateTaskViewModel model)
         {
-            // Server-side validation check
             if (!ModelState.IsValid)
             {
-                // Validation failed: Re-render form with error messages
                 return View(model);
             }
 
-            // Validation passed: Add task to list
-            _tasks.Add(model);
+            // Map ViewModel to DTO and save to database via Service
+            var dto = new CreateTaskDto
+            {
+                Title = model.Title,
+                Description = model.Description,
+                Status = model.Status,
+                Priority = model.Priority,
+                GitHubPrNumber = model.GitHubPrNumber,
+                ProjectId = model.ProjectId
+            };
 
-            // Redirect back to task list
+            await _taskService.CreateTaskAsync(dto);
+
             return RedirectToAction(nameof(Index));
         }
     }

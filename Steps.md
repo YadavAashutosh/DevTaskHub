@@ -438,3 +438,69 @@ Generated and applied the baseline Code-First database migration:
 4. Executed `dotnet ef database update`.
 * **Status:** Verified ✅ (Database schema synced and migration history active)
 
+
+
+---
+
+## 🎯 Step 13: Create Data Transfer Objects (DTOs) (Task 4)
+### 📖 Concept Summary:
+Implemented Data Transfer Objects to establish a clean, decoupled API contract between clients and the database:
+* `DTOs/Tasks/TaskDto.cs`: Output DTO delivering formatted task attributes, project names, and assigned user emails without exposing internal database entities or triggering JSON serialization loops.
+* `DTOs/Tasks/CreateTaskDto.cs`: Input DTO featuring DataAnnotations (`[Required]`, `[StringLength]`, `[Range]`) for server-side validation during task creation.
+* `DTOs/Tasks/UpdateTaskDto.cs`: Update DTO for status transitions and task modifications.
+
+### 💻 Action to do:
+Created `DTOs/Tasks/TaskDto.cs`, `DTOs/Tasks/CreateTaskDto.cs`, and `DTOs/Tasks/UpdateTaskDto.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 13: Create Data Transfer Objects (DTOs) (Task 4)
+### 📖 Concept Summary:
+Implemented Data Transfer Objects to establish a clean, decoupled API contract between clients and the database:
+* `DTOs/Tasks/TaskDto.cs`: Output DTO delivering formatted task attributes, project names, and assigned user emails without exposing internal database entities or triggering JSON serialization loops.
+* `DTOs/Tasks/CreateTaskDto.cs`: Input DTO featuring DataAnnotations (`[Required]`, `[StringLength]`, `[Range]`) for server-side validation during task creation.
+* `DTOs/Tasks/UpdateTaskDto.cs`: Update DTO for status transitions and task modifications.
+
+### 💻 Action to do:
+Created `DTOs/Tasks/TaskDto.cs`, `DTOs/Tasks/CreateTaskDto.cs`, and `DTOs/Tasks/UpdateTaskDto.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+
+---
+
+## 🎯 Step 14: Service / Repository Layer (`ITaskService` & `TaskService`) (Task 6 Part 2)
+### 📖 Concept Summary:
+Decoupled business and database operations from presentation controllers by implementing the Repository/Service design pattern:
+* `Services/ITaskService.cs`: Interface defining asynchronous contracts (`GetAllTasksAsync`, `GetTaskByIdAsync`, `CreateTaskAsync`, `UpdateTaskAsync`, `DeleteTaskAsync`).
+* `Services/TaskService.cs`: Concrete implementation injecting `AppDbContext`, utilizing non-blocking queries (`ToListAsync`, `SaveChangesAsync`), eager loading (`.Include(t => t.Project)`), and performance optimizations (`.AsNoTracking()`).
+* `Program.cs`: Registered `ITaskService` as Scoped dependency via `builder.Services.AddScoped<ITaskService, TaskService>()`.
+
+### 💻 Action to do:
+1. Created `Services/ITaskService.cs`.
+2. Created `Services/TaskService.cs`.
+3. Registered `ITaskService` in `Program.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 15: Web API Controller & MVC Persistence Integration (Task 4)
+### 📖 Concept Summary:
+Built high-performance, asynchronous RESTful API endpoints alongside the MVC architecture:
+* `Controllers/Api/TasksApiController.cs`:
+  - `GET /api/tasks`: Returns `200 OK` with JSON array of tasks mapped to `TaskDto`.
+  - `GET /api/tasks/{id}`: Returns `200 OK` or `404 NotFound` with descriptive error payload.
+  - `POST /api/tasks`: Validates `CreateTaskDto` via automatic `[ApiController]` binding, saves via `ITaskService`, and returns `201 Created` with resource Location header.
+  - `PUT /api/tasks/{id}`: Validates updates and returns `200 OK` or `404 NotFound`.
+  - `DELETE /api/tasks/{id}`: Deletes record and returns `204 NoContent`.
+* Updated MVC `TasksController.cs` to inject `ITaskService`, replacing temporary in-memory collections with real SQL Server persistence through EF Core.
+* Updated `Views/Tasks/Index.cshtml` to consume `@model IEnumerable<TaskDto>`.
+
+### 💻 Action to do:
+1. Created `Controllers/Api/TasksApiController.cs`.
+2. Refactored `Controllers/TasksController.cs` to persist through `ITaskService`.
+3. Updated `Views/Tasks/Index.cshtml` model contract.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)

@@ -5,6 +5,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DevTaskHub.Web.Data.AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 // Add services to the container.
+// Register Service / Repository Layer
+builder.Services.AddScoped<DevTaskHub.Web.Services.ITaskService, DevTaskHub.Web.Services.TaskService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
