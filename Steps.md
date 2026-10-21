@@ -504,3 +504,21 @@ Built high-performance, asynchronous RESTful API endpoints alongside the MVC arc
 2. Refactored `Controllers/TasksController.cs` to persist through `ITaskService`.
 3. Updated `Views/Tasks/Index.cshtml` model contract.
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 16: Test Web API, SQL Persistence, and Merge to `main` (Day 2 Complete)
+### 📖 Concept Summary:
+Verified full-stack data flow from presentation down to SQL Server and completed the Day 2 Git lifecycle:
+* Tested MVC Form submission: Created task records successfully persisted through `ITaskService` into SQL Server table `Tasks`.
+* Tested Web API Endpoint: `GET /api/tasks` returned structured JSON with all relational fields (`projectName`) and zero cyclic reference errors.
+* Option B Lifecycle: Committed all changes to `feature/day2-webapi-efcore`, merged into `main`, and pushed to remote `origin/main`.
+
+### 💻 Action to do:
+1. Tested MVC Form submission and verified database insertion in SQL Server.
+2. Verified `GET /api/tasks` JSON payload in browser.
+3. In GitHub Desktop, committed changes with summary: `Web API, EF Core Migrations, DTOs & Repository Layer`.
+4. Merged `feature/day2-webapi-efcore` into `main`.
+5. Pushed `origin/main` to GitHub.
+* **Status:** Verified ✅ (Git remote `origin/main` at commit `a7f5eea`)
