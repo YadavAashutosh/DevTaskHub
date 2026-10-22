@@ -522,3 +522,31 @@ Verified full-stack data flow from presentation down to SQL Server and completed
 4. Merged `feature/day2-webapi-efcore` into `main`.
 5. Pushed `origin/main` to GitHub.
 * **Status:** Verified ✅ (Git remote `origin/main` at commit `a7f5eea`)
+
+
+---
+
+## 🎯 Step 17: Switch to `main` and Create Day 3 Feature Branch
+### 📖 Concept Summary:
+Prepared repository for Day 3 deliverables (Pagination, Filtering, Sorting, Global Exception Middleware, Swagger/OpenAPI, and Authentication Basics):
+* Updated `.gitignore` with production-grade rules ignoring application logs (`*.log`, `logs/`) and .NET User Secrets (`secrets.json`, `.microsoft.extensions.secretmanager/`).
+* Created and checked out feature branch: `feature/day3-api-auth` off `main`.
+
+### 💻 Action to do:
+1. Committed `.gitignore` changes to `main`.
+2. Created branch `feature/day3-api-auth` in GitHub Desktop.
+* **Status:** Verified ✅
+
+
+---
+
+## 🎯 Step 18: Pagination, Filtering & Sorting Contracts (Task 7)
+### 📖 Concept Summary:
+Architected enterprise-grade pagination and filtering contracts:
+* `DTOs/Common/PagedResponse<T>.cs`: Universal generic wrapper providing standard pagination metadata (`PageNumber`, `PageSize`, `TotalRecords`, `TotalPages`, `HasPreviousPage`, `HasNextPage`, and collection payload `Data`).
+* `DTOs/Tasks/TaskQueryParameters.cs`: Encapsulates client query parameters including page bounds (enforcing a 50-item ceiling), keyword search (`SearchTerm`), categorical filters (`Status`, `Priority`, `ProjectId`, `AssignedUserId`), and multi-column sorting rules (`SortBy`, `IsAscending`).
+
+### 💻 Action to do:
+1. Created `DTOs/Common/PagedResponse.cs`.
+2. Created `DTOs/Tasks/TaskQueryParameters.cs`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
