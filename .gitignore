@@ -404,3 +404,12 @@ FodyWeavers.xsd
 appsettings.*.local.json
 .env
 .env.*
+
+# Application Logs & Diagnostics
+*.log
+logs/
+_logs/
+
+# .NET User Secrets
+secrets.json
+.microsoft.extensions.secretmanager/
