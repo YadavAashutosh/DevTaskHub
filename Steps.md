@@ -585,3 +585,126 @@ Implemented enterprise-grade server-side query processing using LINQ deferred ex
   - `GET /api/tasks`: Binds `[FromQuery] TaskQueryParameters` and returns `200 OK` wrapping the generic `PagedResponse<TaskDto>`.
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
 
+
+
+---
+
+## 🎯 Step 20: Global Exception Handling Middleware & Structured Logging (Task 8)
+### 📖 Concept Summary:
+Architected centralized exception handling and structured diagnostics to prevent internal infrastructure disclosure:
+* `Middleware/GlobalExceptionMiddleware.cs`:
+  - `InvokeAsync`: Surrounds request execution in a pipeline `try/catch`.
+  - Structured logging (`ILogger`): Records unhandled exceptions with path, HTTP method, and trace identifiers.
+  - Standardized Problem Details response: Overrides HTTP 500 response with a secure camelCase JSON payload containing status code, generic support message, trace ID, and UTC timestamp.
+* `Program.cs`: Registered `GlobalExceptionMiddleware` at the entry point of the middleware pipeline.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 20: Global Exception Handling Middleware & Structured Logging (Task 8)
+### 📖 Concept Summary:
+Architected centralized exception handling and structured diagnostics to prevent internal infrastructure disclosure:
+* `Middleware/GlobalExceptionMiddleware.cs`:
+  - `InvokeAsync`: Surrounds request execution in a pipeline `try/catch`.
+  - Structured logging (`ILogger`): Records unhandled exceptions with path, HTTP method, and trace identifiers.
+  - Standardized Problem Details response: Overrides HTTP 500 response with a secure camelCase JSON payload containing status code, generic support message, trace ID, and UTC timestamp.
+* `Program.cs`: Registered `GlobalExceptionMiddleware` at the entry point of the middleware pipeline.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+
+---
+
+## 🎯 Step 21: OpenAPI Specification & Swagger UI Integration (Task 8 Part 2)
+### 📖 Concept Summary:
+Configured automated API documentation and interactive testing tooling compliant with enterprise OpenAPI 3.0 standards:
+* Installed `Swashbuckle.AspNetCore` (v10.3.1) in `DevTaskHub.Web.csproj`.
+* Registered Swagger generator (`builder.Services.AddEndpointsApiExplorer()` and `builder.Services.AddSwaggerGen()`) in DI container.
+* Configured Swagger middleware pipeline (`app.UseSwagger()` and `app.UseSwaggerUI(...)`) guarded for Development environments, providing full interactive documentation of all CRUD, search, pagination, and filter endpoints.
+* **Status:** Verified ✅ (Package restored, Program.cs configured, Build clean)
+
+
+---
+
+## 🎯 Step 21: OpenAPI Specification & Swagger UI Integration (Task 8 Part 2)
+### 📖 Concept Summary:
+Configured automated API documentation and interactive testing tooling compliant with enterprise OpenAPI 3.0 standards:
+* Installed `Swashbuckle.AspNetCore` (v10.3.1) in `DevTaskHub.Web.csproj`.
+* Registered Swagger generator (`builder.Services.AddEndpointsApiExplorer()` and `builder.Services.AddSwaggerGen()`) in DI container.
+* Configured Swagger middleware pipeline (`app.UseSwagger()` and `app.UseSwaggerUI(...)`) guarded for Development environments, providing full interactive documentation of all CRUD, search, pagination, and filter endpoints.
+* **Status:** Verified ✅ (Package restored, Program.cs configured, Build clean)
+
+
+
+---
+
+## 🎯 Step 22: Enterprise Authentication Contracts (DTOs) (Task 9 Part 1)
+### 📖 Concept Summary:
+Architected enterprise-grade authentication request and response contracts:
+* `DTOs/Auth/RegisterRequestDto.cs`: Implements defense-in-depth input validation with NIST-compliant password complexity (minimum 8 characters, uppercase, lowercase, number, and special character), email format enforcement, and field matching validation (`ConfirmPassword`).
+* `DTOs/Auth/UserDto.cs`: Implements a sanitized user representation ensuring complete isolation and zero exposure of sensitive security data (e.g., password hashes, salts).
+* **Status:** Verified ✅ (DTOs created and validated)
+
+
+---
+
+## 🎯 Step 22: Enterprise Authentication Contracts (DTOs) (Task 9 Part 1)
+### 📖 Concept Summary:
+Architected enterprise-grade authentication request and response contracts:
+* `DTOs/Auth/RegisterRequestDto.cs`: Implements defense-in-depth input validation with NIST-compliant password complexity (minimum 8 characters, uppercase, lowercase, number, and special character), email format enforcement, and field matching validation (`ConfirmPassword`).
+* `DTOs/Auth/UserDto.cs`: Implements a sanitized user representation ensuring complete isolation and zero exposure of sensitive security data (e.g., password hashes, salts).
+* **Status:** Verified ✅ (DTOs created and validated)
+
+
+
+---
+
+## 🎯 Step 23: Authentication Service & PBKDF2 Password Hashing (Task 9 Part 2)
+### 📖 Concept Summary:
+Implemented cryptographically secure user authentication and identity persistence in compliance with enterprise security benchmarks:
+* `Services/IAuthService.cs`: Asynchronous contract specifying `RegisterAsync(RegisterRequestDto)` and case-insensitive `EmailExistsAsync(string)`.
+* `Services/AuthService.cs`:
+  - Enforces single-identity uniqueness by validating normalized emails against SQL Server (`AnyAsync`).
+  - Utilizes ASP.NET Core `PasswordHasher<User>` for PBKDF2 with HMAC-SHA512 salted hashing before database persistence.
+  - Returns sanitized `UserDto` guaranteeing zero exposure of password hashes.
+* `Program.cs`: Registered `IAuthService` as Scoped service in the DI container.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 23: Authentication Service & PBKDF2 Password Hashing (Task 9 Part 2)
+### 📖 Concept Summary:
+Implemented cryptographically secure user authentication and identity persistence in compliance with enterprise security benchmarks:
+* `Services/IAuthService.cs`: Asynchronous contract specifying `RegisterAsync(RegisterRequestDto)` and case-insensitive `EmailExistsAsync(string)`.
+* `Services/AuthService.cs`:
+  - Enforces single-identity uniqueness by validating normalized emails against SQL Server (`AnyAsync`).
+  - Utilizes ASP.NET Core `PasswordHasher<User>` for PBKDF2 with HMAC-SHA512 salted hashing before database persistence.
+  - Returns sanitized `UserDto` guaranteeing zero exposure of password hashes.
+* `Program.cs`: Registered `IAuthService` as Scoped service in the DI container.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+
+---
+
+## 🎯 Step 24: Enterprise Auth API Controller & Day 3 Verification (Task 9 Complete)
+### 📖 Concept Summary:
+Architected public REST API endpoint for user registration and credential provisioning:
+* `Controllers/Api/AuthApiController.cs`:
+  - `POST /api/auth/register`: Binds `[FromBody] RegisterRequestDto`, applies model state validation, provisions user via `IAuthService.RegisterAsync`, and returns `201 Created` with sanitized `UserDto`.
+  - Conflict Handling: Catches duplicate email exceptions (`InvalidOperationException`) and returns RFC-compliant `400 BadRequest` with descriptive problem context.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 24: Enterprise Auth API Controller & Day 3 Verification (Task 9 Complete)
+### 📖 Concept Summary:
+Architected public REST API endpoint for user registration and credential provisioning:
+* `Controllers/Api/AuthApiController.cs`:
+  - `POST /api/auth/register`: Binds `[FromBody] RegisterRequestDto`, applies model state validation, provisions user via `IAuthService.RegisterAsync`, and returns `201 Created` with sanitized `UserDto`.
+  - Conflict Handling: Catches duplicate email exceptions (`InvalidOperationException`) and returns RFC-compliant `400 BadRequest` with descriptive problem context.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
