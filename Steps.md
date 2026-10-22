@@ -550,3 +550,38 @@ Architected enterprise-grade pagination and filtering contracts:
 1. Created `DTOs/Common/PagedResponse.cs`.
 2. Created `DTOs/Tasks/TaskQueryParameters.cs`.
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 19: High-Performance IQueryable Deferred Execution (Task 7)
+### 📖 Concept Summary:
+Implemented enterprise-grade server-side query processing using LINQ deferred execution against SQL Server:
+* `Services/ITaskService.cs` & `Services/TaskService.cs`:
+  - `GetTasksAsync(TaskQueryParameters)`:
+    * Deferred filtering: Dynamically composes `WHERE` clauses for `SearchTerm` (case-insensitive across Title and Description), `Status`, `Priority`, `ProjectId`, and `AssignedUserId`.
+    * Pre-pagination counting: Calls `CountAsync()` on the filtered query tree before applying offsets.
+    * Dynamic switch-expression sorting: Orders by `title`, `priority`, `status`, `duedate`, or default `createdAt` (Ascending/Descending).
+    * Server-side slicing: Applies `.Skip((PageNumber - 1) * PageSize).Take(PageSize)` so SQL Server only reads and transmits the requested slice.
+    * Projection: Projects directly to `TaskDto` within the database query, minimizing memory allocation.
+* Updated `Controllers/Api/TasksApiController.cs`:
+  - `GET /api/tasks`: Binds `[FromQuery] TaskQueryParameters` and returns `200 OK` wrapping the generic `PagedResponse<TaskDto>`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+
+---
+
+## 🎯 Step 19: High-Performance IQueryable Deferred Execution (Task 7)
+### 📖 Concept Summary:
+Implemented enterprise-grade server-side query processing using LINQ deferred execution against SQL Server:
+* `Services/ITaskService.cs` & `Services/TaskService.cs`:
+  - `GetTasksAsync(TaskQueryParameters)`:
+    * Deferred filtering: Dynamically composes `WHERE` clauses for `SearchTerm` (case-insensitive across Title and Description), `Status`, `Priority`, `ProjectId`, and `AssignedUserId`.
+    * Pre-pagination counting: Calls `CountAsync()` on the filtered query tree before applying offsets.
+    * Dynamic switch-expression sorting: Orders by `title`, `priority`, `status`, `duedate`, or default `createdAt` (Ascending/Descending).
+    * Server-side slicing: Applies `.Skip((PageNumber - 1) * PageSize).Take(PageSize)` so SQL Server only reads and transmits the requested slice.
+    * Projection: Projects directly to `TaskDto` within the database query, minimizing memory allocation.
+* Updated `Controllers/Api/TasksApiController.cs`:
+  - `GET /api/tasks`: Binds `[FromQuery] TaskQueryParameters` and returns `200 OK` wrapping the generic `PagedResponse<TaskDto>`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
