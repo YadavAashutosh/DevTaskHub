@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using DevTaskHub.Web.DTOs.Common;
 using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Services;
 
@@ -15,12 +16,12 @@ namespace DevTaskHub.Web.Controllers.Api
             _taskService = taskService;
         }
 
-        // GET: /api/tasks
+        // GET: /api/tasks?pageNumber=1&pageSize=10&status=Done&sortBy=createdAt&isAscending=false
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TaskDto>>> GetAllTasks()
+        public async Task<ActionResult<PagedResponse<TaskDto>>> GetTasks([FromQuery] TaskQueryParameters parameters)
         {
-            var tasks = await _taskService.GetAllTasksAsync();
-            return Ok(tasks);
+            var result = await _taskService.GetTasksAsync(parameters);
+            return Ok(result);
         }
 
         // GET: /api/tasks/{id}
@@ -41,8 +42,6 @@ namespace DevTaskHub.Web.Controllers.Api
         public async Task<ActionResult<TaskDto>> CreateTask([FromBody] CreateTaskDto dto)
         {
             var createdTask = await _taskService.CreateTaskAsync(dto);
-
-            // Returns 201 Created with Location header pointing to GET /api/tasks/{id}
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
@@ -69,7 +68,7 @@ namespace DevTaskHub.Web.Controllers.Api
                 return NotFound(new { message = $"Task with ID {id} not found." });
             }
 
-            return NoContent(); // 204 No Content
+            return NoContent();
         }
     }
 }
