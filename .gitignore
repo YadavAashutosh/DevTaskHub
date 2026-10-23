@@ -399,17 +399,44 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-# Security & Environment Overrides
-*.local.json
+
+# ==============================================================================
+# ENTERPRISE SECURITY & LOCAL CONFIGURATION PROTECTION
+# ==============================================================================
+# Local Development Settings (Contains local machine connection strings)
+appsettings.Development.json
+appsettings.*.Development.json
+appsettings.local.json
 appsettings.*.local.json
+appsettings.Production.json
+appsettings.*.Production.json
+
+# Environment & Secret Files
 .env
 .env.*
+*.env
+secrets.json
+.microsoft.extensions.secretmanager/
 
-# Application Logs & Diagnostics
+# Developer Certificates & Private Keys
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem
+
+# Diagnostic & Application Logs
 *.log
 logs/
 _logs/
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# .NET User Secrets
-secrets.json
-.microsoft.extensions.secretmanager/
+# Node / React Frontend (For Day 6 & Beyond)
+node_modules/
+.npm/
+dist/
+build/
+.cache/
