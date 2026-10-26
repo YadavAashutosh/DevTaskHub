@@ -1,10 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevTaskHub.Web.DTOs.Auth
 {
     /// <summary>
     /// Enterprise Registration Request Data Contract.
     /// Enforces strict input validation and NIST-compliant password complexity.
+    /// Supports corporate role provisioning and developer identity linking.
     /// </summary>
     public class RegisterRequestDto
     {
@@ -25,5 +26,17 @@ namespace DevTaskHub.Web.DTOs.Auth
 
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Corporate system role: "Admin", "Developer", "ProjectManager" (Defaults to "Developer").
+        /// </summary>
+        [StringLength(50, ErrorMessage = "Role name cannot exceed 50 characters.")]
+        public string Role { get; set; } = "Developer";
+
+        /// <summary>
+        /// Optional GitHub username for repository and pull request tracking.
+        /// </summary>
+        [StringLength(100, ErrorMessage = "GitHub username cannot exceed 100 characters.")]
+        public string? GitHubUsername { get; set; }
     }
 }

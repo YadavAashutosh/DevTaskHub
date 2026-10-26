@@ -1,71 +1,108 @@
-﻿using Microsoft.AspNetCore.Mvc;
 using DevTaskHub.Web.DTOs.Common;
 using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DevTaskHub.Web.Controllers.Api
 {
     [ApiController]
     [Route("api/tasks")]
+    [Produces("application/json")]
+    [Authorize] // 🛡️ LOCKDOWN: Saari tasks APIs ab JWT Bearer authenticated users ke liye locked hain!
     public class TasksApiController : ControllerBase
     {
         private readonly ITaskService _taskService;
+        private readonly ILogger<TasksApiController> _logger;
 
-        public TasksApiController(ITaskService taskService)
+        public TasksApiController(ITaskService taskService, ILogger<TasksApiController> logger)
         {
             _taskService = taskService;
+            _logger = logger;
         }
 
-        // GET: /api/tasks?pageNumber=1&pageSize=10&status=Done&sortBy=createdAt&isAscending=false
+        /// <summary>
+        /// Retrieves paginated, sorted, and filtered tasks using server-side deferred execution.
+        /// </summary>
         [HttpGet]
-        public async Task<ActionResult<PagedResponse<TaskDto>>> GetTasks([FromQuery] TaskQueryParameters parameters)
+        [ProducesResponseType(typeof(PagedResponse<TaskDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTasks([FromQuery] TaskQueryParameters queryParameters)
         {
-            var result = await _taskService.GetTasksAsync(parameters);
-            return Ok(result);
+            var pagedTasks = await _taskService.GetTasksAsync(queryParameters);
+            return Ok(pagedTasks);
         }
 
-        // GET: /api/tasks/{id}
+        /// <summary>
+        /// Retrieves a specific task record by its unique database identifier.
+        /// </summary>
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<TaskDto>> GetTaskById(int id)
+        [ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetTaskById(int id)
         {
             var task = await _taskService.GetTaskByIdAsync(id);
             if (task == null)
             {
-                return NotFound(new { message = $"Task with ID {id} not found." });
+                return NotFound(new { message = $"Task with ID {id} was not found." });
             }
-
             return Ok(task);
         }
 
-        // POST: /api/tasks
+        /// <summary>
+        /// Creates a new task in the relational database.
+        /// </summary>
         [HttpPost]
-        public async Task<ActionResult<TaskDto>> CreateTask([FromBody] CreateTaskDto dto)
+        [ProducesResponseType(typeof(TaskDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var createdTask = await _taskService.CreateTaskAsync(dto);
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
-        // PUT: /api/tasks/{id}
+        /// <summary>
+        /// Updates an existing task's lifecycle status or attributes.
+        /// </summary>
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<TaskDto>> UpdateTask(int id, [FromBody] UpdateTaskDto dto)
+        [ProducesResponseType(typeof(TaskDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var updatedTask = await _taskService.UpdateTaskAsync(id, dto);
             if (updatedTask == null)
             {
-                return NotFound(new { message = $"Task with ID {id} not found." });
+                return NotFound(new { message = $"Cannot update task. Task with ID {id} was not found." });
             }
 
             return Ok(updatedTask);
         }
 
-        // DELETE: /api/tasks/{id}
+        /// <summary>
+        /// Deletes a task from the system permanently.
+        /// 🛡️ RBAC RESTRICTION: Sirf 'Admin' role users hi task delete kar sakte hain!
+        /// </summary>
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var deleted = await _taskService.DeleteTaskAsync(id);
-            if (!deleted)
+            var isDeleted = await _taskService.DeleteTaskAsync(id);
+            if (!isDeleted)
             {
-                return NotFound(new { message = $"Task with ID {id} not found." });
+                return NotFound(new { message = $"Cannot delete task. Task with ID {id} was not found." });
             }
 
             return NoContent();

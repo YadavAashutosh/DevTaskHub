@@ -1,4 +1,4 @@
-﻿using DevTaskHub.Web.DTOs.Auth;
+using DevTaskHub.Web.DTOs.Auth;
 
 namespace DevTaskHub.Web.Services
 {
@@ -7,14 +7,8 @@ namespace DevTaskHub.Web.Services
     /// </summary>
     public interface IAuthService
     {
-        /// <summary>
-        /// Registers a new user with PBKDF2 salted password hashing and default role assignment.
-        /// </summary>
         Task<UserDto> RegisterAsync(RegisterRequestDto request);
-
-        /// <summary>
-        /// Checks whether an email is already registered in the system (case-insensitive).
-        /// </summary>
+        Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
         Task<bool> EmailExistsAsync(string email);
     }
 }
