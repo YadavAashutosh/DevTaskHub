@@ -97,13 +97,15 @@ builder.Services.AddSwaggerGen(c =>
         Description = "JWT Authorization header using Bearer scheme. Enter 'Bearer {token}'",
         Name = "Authorization",
         In = Microsoft.OpenApi.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.SecuritySchemeType.ApiKey
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
 
-    c.AddSecurityRequirement(_ => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    c.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
     {
         {
-            new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer"),
+            new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document),
             new List<string>()
         }
     });

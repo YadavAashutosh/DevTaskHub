@@ -843,3 +843,64 @@ Architected and deployed the complete enterprise relational database ecosystem i
 * **Database State:** Successfully applied EF Core migration `20261023104930_CompleteEnterpriseSchema` to SQL Server `DevTaskHubDb`.
 * **Status:** Verified ✅ (Build succeeded with 0 errors, Database fully migrated)
 
+
+---
+
+## 🎯 Step 30: Authentication Service Implementation (`AuthService`)
+### 📖 Concept Summary:
+Implemented core enterprise authentication engine with PBKDF2 cryptographic verification and JWT token generation:
+* `Services/IAuthService.cs`: Expanded contract with `RegisterAsync`, `LoginAsync`, and `EmailExistsAsync`.
+* `Services/AuthService.cs`:
+  - Enforced NIST-compliant password hashing via ASP.NET Core `PasswordHasher<User>`.
+  - Added user registration with dynamic role assignment (`Admin`, `Developer`) and optional `GitHubUsername`.
+  - Implemented `LoginAsync`: locates user in SQL Server, verifies PBKDF2 hash, mints signed JWT token with claims (`sub`, `email`, `role`), and persists 64-byte CSPRNG refresh token into `RefreshSessions` table.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+---
+
+## 🎯 Step 31: JWT Bearer Middleware Pipeline & Direct Swagger UI Authentication
+### 📖 Concept Summary:
+Configured secure token validation pipeline and seamless Swagger UI testing experience:
+* `Program.cs`:
+  - Registered `AddAuthentication(JwtBearerDefaults.AuthenticationScheme)` with symmetric HMAC-SHA256 signing key fetched securely from Configuration / Azure Key Vault fallback.
+  - Enabled issuer and audience validation (`ValidateIssuer = true`, `ValidateAudience = true`) with `ClockSkew = TimeSpan.Zero`.
+  - Configured Swashbuckle Swagger with `SecuritySchemeType.Http` and `Scheme = "bearer"`, allowing developers to paste raw JWT tokens directly into the Swagger UI Authorize modal without manual "Bearer " typing.
+  - Ordered pipeline: `app.UseAuthentication()` strictly preceding `app.UseAuthorization()`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+---
+
+## 🎯 Step 32: Login API Endpoint (`POST /api/auth/login`)
+### 📖 Concept Summary:
+Exposed RESTful corporate authentication endpoint for client applications and Swagger testing:
+* `Controllers/Api/AuthApiController.cs`:
+  - Added `[HttpPost("login")]` accepting validated `LoginRequestDto`.
+  - Returns `200 OK` with `AuthResponseDto` containing access token, expiration, and sanitized user profile upon successful credentials.
+  - Returns `401 Unauthorized` on invalid credentials or deactivated user accounts with secure, timing-attack resistant logging.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+---
+
+## 🎯 Step 33: Role-Based Access Control (RBAC) Security Guardrails
+### 📖 Concept Summary:
+Hardened API endpoints with defense-in-depth role authorizations:
+* `Controllers/Api/TasksApiController.cs`:
+  - Applied class-level `[Authorize]` lockdown (blocks unauthenticated access with `401 Unauthorized`).
+  - Applied method-level `[Authorize(Roles = "Admin")]` on `DELETE /api/tasks/{id}`, ensuring only privileged administrators can permanently delete records.
+  - Non-admin developers attempting delete operations are blocked with `403 Forbidden`.
+* **Status:** Verified ✅ (Build succeeded with 0 errors)
+
+---
+
+## 🎯 Step 34: Rigorous Smoke Testing (Postman & Swagger)
+### 📖 Concept Summary:
+Executed comprehensive 5-stage verification testing adhering to ₹200-Crore architecture standards:
+* **Test 1 (Unauthenticated Block):** `GET /api/tasks` without token returned `401 Unauthorized` with `www-authenticate: Bearer` header.
+* **Test 2 (User Registration & DB Hashing):** Registered Developer and Admin accounts; verified PBKDF2 hash and `RowVersion` stored in SQL Server `Users` table (`201 Created`).
+* **Test 3 (Login & Token Minting):** Logged in via `POST /api/auth/login`; verified signed JWT token with embedded `Role` claims returned (`200 OK`).
+* **Test 4 (Authenticated Access):** `GET /api/tasks` with valid Bearer token returned `200 OK` with paginated dataset.
+* **Test 5A (RBAC Developer Block):** `DELETE /api/tasks/1` with Developer token successfully returned `403 Forbidden`.
+* **Test 5B (RBAC Admin Success):** `DELETE /api/tasks/1` with Admin token successfully bypassed role check and returned `204 NoContent`.
+* **Status:** Verified ✅ (All 5 test cases 100% passed)
+
+---
