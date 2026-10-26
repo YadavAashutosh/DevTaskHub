@@ -9,6 +9,7 @@ namespace DevTaskHub.Web.Services
     {
         Task<UserDto> RegisterAsync(RegisterRequestDto request);
         Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
+        Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request);
         Task<bool> EmailExistsAsync(string email);
     }
 }
