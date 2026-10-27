@@ -1,0 +1,63 @@
+.taskCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 180px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.taskId {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-h);
+  word-break: break-word;
+}
+
+.completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.description {
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.45;
+  flex-grow: 1;
+  word-break: break-word;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.time {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}

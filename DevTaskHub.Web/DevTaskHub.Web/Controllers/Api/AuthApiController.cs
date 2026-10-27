@@ -77,5 +77,37 @@ namespace DevTaskHub.Web.Controllers.Api
                 return Unauthorized(new { message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Exchanges an active refresh token for a newly-minted JWT access token and rotated refresh token.
+        /// </summary>
+        /// <param name="request">Persistent refresh token.</param>
+        /// <returns>Fresh JWT access token pair.</returns>
+        /// <response code="200">Token pair rotated and issued successfully.</response>
+        /// <response code="400">Validation failure on request payload.</response>
+        /// <response code="401">Refresh token is expired, revoked, or invalid.</response>
+        [HttpPost("refresh")]
+        [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var response = await _authService.RefreshTokenAsync(request);
+                return Ok(response);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning("Refresh token failure: {Message}", ex.Message);
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
     }
 }
+

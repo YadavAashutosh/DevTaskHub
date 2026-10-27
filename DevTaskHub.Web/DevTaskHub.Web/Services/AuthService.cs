@@ -22,7 +22,7 @@ namespace DevTaskHub.Web.Services
         private readonly ILogger<AuthService> _logger;
 
         public AuthService(
-            AppDbContext context, 
+            AppDbContext context,
             IJwtTokenGenerator jwtTokenGenerator,
             IOptions<JwtSettings> jwtOptions,
             ILogger<AuthService> logger)
@@ -129,6 +129,67 @@ namespace DevTaskHub.Web.Services
             return new AuthResponseDto
             {
                 Token = jwtToken,
+                RefreshToken = rawRefreshToken,
+                TokenType = "Bearer",
+                ExpiresAtUtc = expiresAtUtc,
+                User = new UserDto
+                {
+                    UserId = user.Id,
+                    FullName = user.FullName ?? string.Empty,
+                    Email = user.Email,
+                    Role = user.Role,
+                    GitHubUsername = user.GitHubUsername,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                }
+            };
+        }
+
+        public async Task<AuthResponseDto> RefreshTokenAsync(RefreshTokenRequestDto request)
+        {
+            var rawToken = request.RefreshToken.Trim();
+
+            // 1. Locate session in SQL Server by TokenHash
+            var session = await _context.RefreshSessions
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.TokenHash == rawToken);
+
+            // 2. Validate Session Validity and Expiration
+            if (session == null || !session.IsActive || !session.User.IsActive)
+            {
+                _logger.LogWarning("Refresh token attempt failed: Invalid, revoked, or expired token.");
+                throw new UnauthorizedAccessException("Invalid or expired refresh token. Please log in again.");
+            }
+
+            var user = session.User;
+
+            // 3. Cryptographic Token Rotation: Revoke existing session
+            var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+            session.RevokedAtUtc = DateTime.UtcNow;
+            session.ReplacedByTokenHash = newRefreshToken;
+
+            // 4. Create newly-minted active RefreshSession
+            var newSession = new RefreshSession
+            {
+                UserId = user.Id,
+                TokenHash = newRefreshToken,
+                ExpiresAtUtc = DateTime.UtcNow.AddDays(7),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            _context.RefreshSessions.Add(newSession);
+            await _context.SaveChangesAsync();
+
+            // 5. Mint new signed JWT Access Token
+            var newJwtToken = _jwtTokenGenerator.GenerateToken(user);
+            var expiresAtUtc = DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes);
+
+            _logger.LogInformation("Refresh token rotated successfully for User {UserId}.", user.Id);
+
+            return new AuthResponseDto
+            {
+                Token = newJwtToken,
+                RefreshToken = newRefreshToken,
                 TokenType = "Bearer",
                 ExpiresAtUtc = expiresAtUtc,
                 User = new UserDto
