@@ -1,4 +1,4 @@
-# 📋 DevTask Hub: Implementation Steps Log
+﻿# 📋 DevTask Hub: Implementation Steps Log
 
 This file tracks every step completed in DevTask Hub along with its concept summary and verified status.
 
@@ -917,17 +917,3 @@ Implemented automated session extension and token rotation in .NET Web API to pr
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
 
 ---
-
-## 🎯 Step 35: Refresh Token Lifecycle & Cryptographic Rotation (RFC 6749)
-### 📖 Concept Summary:
-Implemented automated session extension and token rotation in .NET Web API to prevent forced re-logins upon JWT access token expiration:
-* `DTOs/Auth/AuthResponseDto.cs`: Extended with `RefreshToken` property alongside access token.
-* `DTOs/Auth/RefreshTokenRequestDto.cs`: Input contract accepting active refresh token.
-* `Services/IAuthService.cs` & `Services/AuthService.cs`:
-  - `LoginAsync`: Generates 64-byte CSPRNG token, persists to `RefreshSessions` table, and returns in payload.
-  - `RefreshTokenAsync`: Implemented RFC 6749 token rotation. Locates active session by `TokenHash`, revokes existing session (`RevokedAtUtc = DateTime.UtcNow`), issues newly-minted JWT access token, and persists fresh 7-day refresh session.
-* `Controllers/Api/AuthApiController.cs`: Exposed `POST /api/auth/refresh` endpoint.
-* **Status:** Verified ✅ (Build succeeded with 0 errors)
-
----
-
