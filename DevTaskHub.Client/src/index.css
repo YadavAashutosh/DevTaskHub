@@ -1,82 +1,76 @@
 :root {
-  /* Minimal Enterprise Palette */
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #ffffff;
+  /* 100% Pure Light Theme Palette (Matching Reference Image 2) */
+  --bg: #f8fafc;
   --bg-card: #ffffff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
+  --bg-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --border-focus: #3b82f6;
 
-  /* Clean Purple Accent */
-  --accent: #aa3bff;
-  --accent-hover: #9322eb;
-  --accent-bg: rgba(170, 59, 255, 0.08);
-  --accent-border: rgba(170, 59, 255, 0.4);
+  /* Typography Colors */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
 
-  /* Status Colors */
-  --success: #10b981;
-  --success-bg: rgba(16, 185, 129, 0.1);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.1);
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
+  /* Subtle Enterprise Blue Accent */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: #eff6ff;
+  --accent-border: #bfdbfe;
 
-  /* Subtle Clean Elevation */
-  --shadow: rgba(0, 0, 0, 0.08) 0 4px 12px -2px, rgba(0, 0, 0, 0.04) 0 2px 4px -1px;
+  /* Status Header Colors (Matching Image 2 Kanban Pills) */
+  --status-todo-header: #475569;
+  --status-todo-bg: #f1f5f9;
+
+  --status-prog-header: #2563eb;
+  --status-prog-bg: #eff6ff;
+
+  --status-review-header: #d97706;
+  --status-review-bg: #fef3c7;
+
+  --status-done-header: #16a34a;
+  --status-done-bg: #dcfce7;
+
+  /* Priority Colors */
+  --priority-low: #64748b;
+  --priority-med: #0284c7;
+  --priority-high: #ea580c;
+  --priority-crit: #dc2626;
 
   /* Typography */
-  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 16px/150% var(--sans);
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg);
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --bg-card: #1f2028;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-
-    --accent: #c084fc;
-    --accent-hover: #a855f7;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
+/* Hard lock body to Light Theme (No dark mode inversion) */
 body {
   margin: 0;
   padding: 0;
   background-color: var(--bg);
-  color: var(--text);
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
+/* Wide canvas for 4-column Kanban board */
 #root {
   width: 100%;
-  max-width: 1140px;
+  max-width: 1440px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-h1, h2, h3, h4 {
-  font-family: var(--sans);
-  color: var(--text-h);
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
   font-weight: 600;
   margin: 0;
 }
@@ -87,4 +81,5 @@ p {
 
 input, select, textarea, button {
   font-family: inherit;
+  font-size: 13px;
 }

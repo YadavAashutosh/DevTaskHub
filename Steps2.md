@@ -79,3 +79,26 @@ Step numbering is strictly continuous and synchronized across the full stack:
   - `src/context/AuthContext.tsx`: Global auth context provider with custom `useAuth` hook.
 * **Status:** Scaffolded & ready for Day 6 step-by-step deep dive ⏳
 
+
+
+# 🚀 Day 6: Routing, Layout & Enterprise Auth Navigation
+
+### [Step 42] 📦 React Router DOM Installation & Setup
+* **Objective:** Install `react-router-dom` to support client-side Single Page Application (SPA) routing without full-page reloads.
+* **Execution:**
+  - Ran `npm install react-router-dom` inside `DevTaskHub.Client`.
+  - Verified package installation in `package.json` (`react-router-dom ^7.18.4`).
+  - Validated zero compilation conflicts via `npm run build` (`tsc -b && vite build`) passing cleanly in 473ms.
+* **Status:** Verified ✅
+
+---
+
+### [Step 43] 🏛️ Enterprise Layout System (Navbar, Footer, AppLayout)
+* **Objective:** Build consistent application shell with sticky navigation, dynamic active links, responsive branding, API health indicator, and nested routing support (`<Outlet />`).
+* **Execution:**
+  - `Navbar` (`src/components/layout/Navbar/`): Sticky brand header, NavLink active state indicators, dynamic auth section with login/register links and welcome/logout toggles.
+  - `Footer` (`src/components/layout/Footer/`): Enterprise copyright footer and real-time backend API connection status pill.
+  - `AppLayout` (`src/components/layout/AppLayout/`): Full-height flex wrapper integrating `Navbar`, `<Outlet />` main container, and `Footer`.
+  - `src/components/layout/index.ts`: Barrel export.
+* **Verification:** Ran `npm run build` (`tsc -b && vite build`) — compiled cleanly in 653ms with 0 errors.
+* **Status:** Verified ✅
