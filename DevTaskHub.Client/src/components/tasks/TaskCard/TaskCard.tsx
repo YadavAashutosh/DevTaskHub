@@ -1,6 +1,6 @@
 import React from 'react';
-import type { TaskDto, TaskPriorityType, TaskStatusType } from '../../../types/task.types';
-import { Card, Badge, Button } from '../../common';
+import type { TaskDto, TaskPriorityType, TaskStatusType } from '../../../types';
+import { Badge } from '../../common';
 import styles from './TaskCard.module.css';
 
 export interface TaskCardProps {
@@ -10,70 +10,80 @@ export interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleStatus, onDelete }) => {
-  const getPriorityVariant = (priority: TaskPriorityType) => {
+  const getPriorityBadgeVariant = (priority: TaskPriorityType): 'red' | 'yellow' | 'neutral' => {
     switch (priority) {
-      case 'High': return 'purple';
-      case 'Medium': return 'yellow';
-      default: return 'neutral';
-    }
-  };
-
-  const getStatusVariant = (status: TaskStatusType) => {
-    switch (status) {
-      case 'Done': return 'green';
-      case 'InProgress': return 'yellow';
-      default: return 'neutral';
+      case 'High':
+        return 'red';
+      case 'Medium':
+        return 'yellow';
+      case 'Low':
+      default:
+        return 'neutral';
     }
   };
 
   const getNextStatusLabel = (status: TaskStatusType) => {
     switch (status) {
-      case 'Todo': return 'Start';
-      case 'InProgress': return 'Complete';
-      case 'Done': return 'Reopen';
+      case 'Todo':
+        return 'Start →';
+      case 'InProgress':
+        return 'Done ✓';
+      case 'Done':
+        return 'Reopen ↺';
     }
   };
 
   return (
-    <Card className={styles.taskCard}>
-      <div className={styles.header}>
-        <div className={styles.badges}>
-          <Badge variant={getStatusVariant(task.status)}>{task.status}</Badge>
-          <Badge variant={getPriorityVariant(task.priority)}>{task.priority} Priority</Badge>
-          {task.gitHubPrNumber && (
-            <Badge variant="purple">PR #{task.gitHubPrNumber}</Badge>
-          )}
-        </div>
-        <span className={styles.taskId}>#{task.id}</span>
+    <div className={styles.kanbanCard}>
+      {/* Top Row: Title & #ID */}
+      <div className={styles.cardTopRow}>
+        <h4 className={`${styles.cardTitle} ${task.status === 'Done' ? styles.completedTitle : ''}`}>
+          {task.title}
+        </h4>
+        <span className={styles.cardId}>#{task.id}</span>
       </div>
 
-      <h3 className={`${styles.title} ${task.status === 'Done' ? styles.completed : ''}`}>
-        {task.title}
-      </h3>
-
+      {/* Optional Description / Technical Notes */}
       {task.description && (
-        <p className={styles.description}>{task.description}</p>
+        <p className={styles.cardDescription}>{task.description}</p>
       )}
 
-      <div className={styles.footer}>
-        <span className={styles.time}>{new Date(task.createdAt).toLocaleDateString()}</span>
-        <div className={styles.actions}>
-          <Button
-            size="sm"
-            variant={task.status === 'Done' ? 'secondary' : 'primary'}
+      {/* Tags & Badges Row (Using Atomic Badge Component) */}
+      <div className={styles.cardTagsRow}>
+        <Badge variant={getPriorityBadgeVariant(task.priority)}>
+          🚩 {task.priority}
+        </Badge>
+        {task.gitHubPrNumber && (
+          <Badge variant="purple">PR #{task.gitHubPrNumber}</Badge>
+        )}
+      </div>
+
+      {/* Bottom Row: Member Avatar & Actions */}
+      <div className={styles.cardBottomRow}>
+        <div className={styles.avatar} title="DevTaskHub Member">
+          DH
+        </div>
+
+        <div className={styles.cardActions}>
+          <button
+            type="button"
+            className={styles.advanceBtn}
             onClick={() => onToggleStatus(task.id)}
+            title="Advance status"
           >
             {getNextStatusLabel(task.status)}
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
+          </button>
+          <button
+            type="button"
+            className={styles.deleteBtn}
             onClick={() => onDelete(task.id)}
+            title="Delete task"
           >
-            Delete
-          </Button>
+            ✕
+          </button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
+

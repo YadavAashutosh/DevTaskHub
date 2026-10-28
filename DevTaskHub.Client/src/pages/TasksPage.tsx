@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import type { TaskDto, CreateTaskDto, TaskStatusType, TaskPriorityType } from '../types';
 import { useDebounce } from '../hooks';
 import { Button } from '../components/common';
-import { TaskForm } from '../components/tasks';
+import { TaskForm, TaskCard } from '../components/tasks';
 import styles from './TasksPage.module.css';
 
 interface ColumnConfig {
@@ -82,29 +82,6 @@ export const TasksPage: React.FC = () => {
       return matchesSearch && matchesPriority;
     });
   }, [tasks, debouncedSearch, priorityFilter]);
-
-  const getPriorityBadgeClass = (priority: TaskPriorityType) => {
-    switch (priority) {
-      case 'High':
-        return styles.priorityHigh;
-      case 'Medium':
-        return styles.priorityMedium;
-      case 'Low':
-      default:
-        return styles.priorityLow;
-    }
-  };
-
-  const getNextStatusLabel = (status: TaskStatusType) => {
-    switch (status) {
-      case 'Todo':
-        return 'Start →';
-      case 'InProgress':
-        return 'Done ✓';
-      case 'Done':
-        return 'Reopen ↺';
-    }
-  };
 
   return (
     <div className={styles.container}>
@@ -187,57 +164,18 @@ export const TasksPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Card List */}
+              {/* Card List Rendering via Atomic TaskCard Component */}
               <div className={styles.cardList}>
                 {columnTasks.length === 0 ? (
                   <div className={styles.emptyColumn}>No tasks in this stage</div>
                 ) : (
                   columnTasks.map((task) => (
-                    <div key={task.id} className={styles.kanbanCard}>
-                      <div className={styles.cardTopRow}>
-                        <h4 className={styles.cardTitle}>{task.title}</h4>
-                        <span className={styles.cardId}>#{task.id}</span>
-                      </div>
-
-                      {task.description && (
-                        <div className={styles.cardPhase}>{task.description}</div>
-                      )}
-
-                      <div className={styles.cardTagsRow}>
-                        <span
-                          className={`${styles.priorityBadge} ${getPriorityBadgeClass(
-                            task.priority
-                          )}`}
-                        >
-                          🚩 {task.priority}
-                        </span>
-                      </div>
-
-                      <div className={styles.cardBottomRow}>
-                        <div className={styles.avatar} title="DevTaskHub Member">
-                          DH
-                        </div>
-                        <div className={styles.cardActions}>
-                          <button
-                            type="button"
-                            className={styles.advanceBtn}
-                            onClick={() => handleToggleStatus(task.id)}
-                            title="Advance Status"
-                          >
-                            {getNextStatusLabel(task.status)}
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.advanceBtn}
-                            onClick={() => handleDeleteTask(task.id)}
-                            title="Delete Task"
-                            style={{ color: '#dc2626' }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onToggleStatus={handleToggleStatus}
+                      onDelete={handleDeleteTask}
+                    />
                   ))
                 )}
               </div>
@@ -268,5 +206,3 @@ export const TasksPage: React.FC = () => {
     </div>
   );
 };
-
-
