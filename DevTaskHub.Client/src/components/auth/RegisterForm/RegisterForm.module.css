@@ -1,0 +1,106 @@
+.authCard {
+  max-width: 500px;
+  width: 100%;
+  margin: 2.5rem auto;
+  padding: 2.5rem 2rem;
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-h, #08060d);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text, #6b6375);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.errorBanner {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.roleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.roleLabel {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-h, #08060d);
+}
+
+.roleOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.roleOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.6rem 0.4rem;
+  border: 1px solid var(--border, #e5e4e7);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.roleOption:hover {
+  border-color: var(--accent, #aa3bff);
+}
+
+.roleActive {
+  border-color: var(--accent, #aa3bff);
+  background-color: rgba(170, 59, 255, 0.06);
+  font-weight: 600;
+}
+
+.submitBtn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.footerText {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text, #6b6375);
+}
+
+.link {
+  color: var(--accent, #aa3bff);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
