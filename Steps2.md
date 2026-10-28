@@ -102,3 +102,116 @@ Step numbering is strictly continuous and synchronized across the full stack:
   - `src/components/layout/index.ts`: Barrel export.
 * **Verification:** Ran `npm run build` (`tsc -b && vite build`) — compiled cleanly in 653ms with 0 errors.
 * **Status:** Verified ✅
+
+
+---
+
+### [Step 44] 📋 Backend-Aligned Authentication Contracts
+* **Objective:** Establish strict 1:1 TypeScript type contracts matching .NET Web API DTOs and database models (`AuthApiController.cs`, `User.cs`).
+* **Execution:**
+  - `src/types/auth.types.ts`: Created contracts for `LoginRequestDto` (email/password), `RegisterRequestDto` (fullName, email, password, confirmPassword, role, gitHubUsername), `UserDto`, `AuthResponseDto` (token, refreshToken, tokenType, expiresAtUtc, user), `RefreshTokenRequestDto`, and `UserSession`.
+  - `src/types/index.ts`: Unified barrel export for clean modular imports across the application.
+* **Status:** Verified ✅
+
+---
+
+### [Step 45] 🔐 Corporate Auth Components & Security Gate (LoginForm, RegisterForm, ProtectedRoute)
+* **Objective:** Implement production-grade auth forms with input validation, accessible field labeling, error messages, and route protection guards.
+* **Execution:**
+  - `LoginForm` (`src/components/auth/LoginForm/`): Controlled credentials form (email, password), submission state handler, error display, and navigation link to Register.
+  - `RegisterForm` (`src/components/auth/RegisterForm/`): Multi-field registration form covering corporate email, full name, password, confirmation validation, role selection (`Developer`, `ProjectManager`, `Admin`), and optional GitHub username.
+  - `ProtectedRoute` (`src/components/common/ProtectedRoute/`): Route security gate using `<Navigate />` and `<Outlet />`, preserving target route in `location.state` for seamless post-login redirect, with optional Role-Based Access Control (`requiredRole`).
+  - `LoginPage` & `RegisterPage` (`src/pages/`): Dedicated auth pages handling user submission, UX simulated delays, and redirect routing.
+* **Status:** Verified ✅
+
+---
+
+### [Step 46] ⚡ Custom Performance Hook: useDebounce
+* **Objective:** Implement a reusable debounce hook to optimize search inputs and prevent high-frequency re-filtering or redundant API requests.
+* **Execution:**
+  - `src/hooks/useDebounce.ts`: Custom generic hook `useDebounce<T>(value: T, delay = 300): T` leveraging `useEffect` and `setTimeout` with automated cleanup (`clearTimeout`) on rapid keystrokes.
+  - `src/hooks/index.ts`: Barrel export.
+* **Status:** Verified ✅
+
+---
+
+### [Step 47] 🛡️ Enterprise Resilience: React Error Boundary
+* **Objective:** Protect the SPA from white-screen crashes caused by unhandled runtime JavaScript exceptions.
+* **Execution:**
+  - `ErrorBoundary` (`src/components/common/ErrorBoundary/`): Class component implementing `componentDidCatch` and `getDerivedStateFromError`. Renders an enterprise fallback recovery UI with error message diagnostics and a reload button (`handleReset`).
+  - Scoped CSS Module (`ErrorBoundary.module.css`) for clean visual feedback.
+  - Exported through `src/components/common/index.ts`.
+* **Status:** Verified ✅
+
+---
+
+### [Step 48] 🧭 Central Route Tree, Light-Themed Kanban Board & Design System
+* **Objective:** Assemble central routing in `App.tsx` and build an enterprise, light-themed Kanban task board (`TasksPage.tsx`) inspired by modern production layouts.
+* **Execution:**
+  - `App.tsx`: Central router wrapped inside `<ErrorBoundary>`, `<BrowserRouter>`, and `<AppLayout>`, with routes for `/`, `/tasks`, `/login`, `/register`, `/404`, and wildcard redirect.
+  - `index.css`: Locked to 100% Pure Light Theme (`--bg: #f8fafc`, `--border: #e2e8f0`, `--text-primary: #0f172a`), removing dark mode media query inversion.
+  - `TasksPage.tsx` & `TasksPage.module.css`:
+    - Strict DevTaskHub domain naming (`DevTaskHub • Sprint Workspace • Active Board`).
+    - Zero Seed Data policy (`useState<TaskDto[]>([])`).
+    - Real-time search with `useDebounce` and priority filtering.
+    - 3-column Kanban layout (`To Do`, `In Progress`, `Done`) matching backend `TaskStatusType`.
+    - Modal dialog popup with `TaskForm` triggered by `+ New task`.
+* **Verification:** `npm run build` (`tsc -b && vite build`) transformed 73 modules and compiled in 476ms with 0 errors.
+* **Status:** Verified & Committed (`347739a`) ✅
+
+
+---
+
+### [Step 44] 📋 Backend-Aligned Authentication Contracts
+* **Objective:** Establish strict 1:1 TypeScript type contracts matching .NET Web API DTOs and database models (`AuthApiController.cs`, `User.cs`).
+* **Execution:**
+  - `src/types/auth.types.ts`: Created contracts for `LoginRequestDto` (email/password), `RegisterRequestDto` (fullName, email, password, confirmPassword, role, gitHubUsername), `UserDto`, `AuthResponseDto` (token, refreshToken, tokenType, expiresAtUtc, user), `RefreshTokenRequestDto`, and `UserSession`.
+  - `src/types/index.ts`: Unified barrel export for clean modular imports across the application.
+* **Status:** Verified ✅
+
+---
+
+### [Step 45] 🔐 Corporate Auth Components & Security Gate (LoginForm, RegisterForm, ProtectedRoute)
+* **Objective:** Implement production-grade auth forms with input validation, accessible field labeling, error messages, and route protection guards.
+* **Execution:**
+  - `LoginForm` (`src/components/auth/LoginForm/`): Controlled credentials form (email, password), submission state handler, error display, and navigation link to Register.
+  - `RegisterForm` (`src/components/auth/RegisterForm/`): Multi-field registration form covering corporate email, full name, password, confirmation validation, role selection (`Developer`, `ProjectManager`, `Admin`), and optional GitHub username.
+  - `ProtectedRoute` (`src/components/common/ProtectedRoute/`): Route security gate using `<Navigate />` and `<Outlet />`, preserving target route in `location.state` for seamless post-login redirect, with optional Role-Based Access Control (`requiredRole`).
+  - `LoginPage` & `RegisterPage` (`src/pages/`): Dedicated auth pages handling user submission, UX simulated delays, and redirect routing.
+* **Status:** Verified ✅
+
+---
+
+### [Step 46] ⚡ Custom Performance Hook: useDebounce
+* **Objective:** Implement a reusable debounce hook to optimize search inputs and prevent high-frequency re-filtering or redundant API requests.
+* **Execution:**
+  - `src/hooks/useDebounce.ts`: Custom generic hook `useDebounce<T>(value: T, delay = 300): T` leveraging `useEffect` and `setTimeout` with automated cleanup (`clearTimeout`) on rapid keystrokes.
+  - `src/hooks/index.ts`: Barrel export.
+* **Status:** Verified ✅
+
+---
+
+### [Step 47] 🛡️ Enterprise Resilience: React Error Boundary
+* **Objective:** Protect the SPA from white-screen crashes caused by unhandled runtime JavaScript exceptions.
+* **Execution:**
+  - `ErrorBoundary` (`src/components/common/ErrorBoundary/`): Class component implementing `componentDidCatch` and `getDerivedStateFromError`. Renders an enterprise fallback recovery UI with error message diagnostics and a reload button (`handleReset`).
+  - Scoped CSS Module (`ErrorBoundary.module.css`) for clean visual feedback.
+  - Exported through `src/components/common/index.ts`.
+* **Status:** Verified ✅
+
+---
+
+### [Step 48] 🧭 Central Route Tree, Light-Themed Kanban Board & Design System
+* **Objective:** Assemble central routing in `App.tsx` and build an enterprise, light-themed Kanban task board (`TasksPage.tsx`) inspired by modern production layouts.
+* **Execution:**
+  - `App.tsx`: Central router wrapped inside `<ErrorBoundary>`, `<BrowserRouter>`, and `<AppLayout>`, with routes for `/`, `/tasks`, `/login`, `/register`, `/404`, and wildcard redirect.
+  - `index.css`: Locked to 100% Pure Light Theme (`--bg: #f8fafc`, `--border: #e2e8f0`, `--text-primary: #0f172a`), removing dark mode media query inversion.
+  - `TasksPage.tsx` & `TasksPage.module.css`:
+    - Strict DevTaskHub domain naming (`DevTaskHub • Sprint Workspace • Active Board`).
+    - Zero Seed Data policy (`useState<TaskDto[]>([])`).
+    - Real-time search with `useDebounce` and priority filtering.
+    - 3-column Kanban layout (`To Do`, `In Progress`, `Done`) matching backend `TaskStatusType`.
+    - Modal dialog popup with `TaskForm` triggered by `+ New task`.
+* **Verification:** `npm run build` (`tsc -b && vite build`) transformed 73 modules and compiled in 476ms with 0 errors.
+* **Status:** Verified & Committed (`347739a`) ✅
+
