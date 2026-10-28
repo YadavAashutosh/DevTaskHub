@@ -93,7 +93,7 @@
   outline: none;
 }
 
-/* 4-Column Kanban Board Grid (Image 2) */
+/* 3-Column Kanban Board Grid */
 .kanbanGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -156,7 +156,7 @@
   font-size: 11px;
 }
 
-/* Cards inside column (Image 2) */
+/* Cards List Container */
 .cardList {
   display: flex;
   flex-direction: column;
@@ -164,99 +164,12 @@
   flex: 1;
 }
 
-.kanbanCard {
-  background-color: #ffffff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.kanbanCard:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
-  border-color: #cbd5e1;
-}
-
-.cardTopRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.cardTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.cardId {
-  font-size: 11px;
+.emptyColumn {
+  padding: 30px 10px;
+  text-align: center;
   color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.cardPhase {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.cardTagsRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.priorityBadge {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.priorityCritical { background-color: #fee2e2; color: #dc2626; }
-.priorityHigh { background-color: #ffedd5; color: #ea580c; }
-.priorityMedium { background-color: #fef3c7; color: #d97706; }
-.priorityLow { background-color: #f1f5f9; color: #64748b; }
-
-.cardBottomRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background-color: var(--accent);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.cardActions {
-  display: flex;
-  gap: 4px;
+  font-size: 12px;
+  font-style: italic;
 }
 
 .advanceBtn {
@@ -273,14 +186,6 @@
   background-color: var(--bg-hover);
   color: var(--accent);
   border-color: var(--accent-border);
-}
-
-.emptyColumn {
-  padding: 30px 10px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-style: italic;
 }
 
 /* Modal Backdrop */

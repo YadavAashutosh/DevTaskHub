@@ -3,7 +3,7 @@ import styles from './Badge.module.css';
 
 export interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'purple' | 'green' | 'yellow' | 'neutral';
+  variant?: 'purple' | 'green' | 'yellow' | 'neutral' | 'red';
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -16,3 +16,4 @@ export const Badge: React.FC<BadgeProps> = ({
     </span>
   );
 };
+
