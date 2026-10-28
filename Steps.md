@@ -1,4 +1,4 @@
-﻿# 📋 DevTask Hub: Implementation Steps Log
+# 📋 DevTask Hub: Implementation Steps Log
 
 This file tracks every step completed in DevTask Hub along with its concept summary and verified status.
 
@@ -917,3 +917,14 @@ Implemented automated session extension and token rotation in .NET Web API to pr
 * **Status:** Verified ✅ (Build succeeded with 0 errors)
 
 ---
+
+
+## ⚛️ Steps 36–48: React 19 Frontend SPA (Day 5 & Day 6)
+> For the complete step-by-step logs of the React 19 SPA (Vite, TypeScript, Atomic UI Components, Controlled State, Routing, Auth Forms, ProtectedRoute, useDebounce, ErrorBoundary, and Light-Themed Kanban Board), refer to:
+> 👉 **[`Steps2.md`](./Steps2.md)** (Steps 36–48 verified and committed).
+
+
+## ⚛️ Steps 36–48: React 19 Frontend SPA (Day 5 & Day 6)
+> For the complete step-by-step logs of the React 19 SPA (Vite, TypeScript, Atomic UI Components, Controlled State, Routing, Auth Forms, ProtectedRoute, useDebounce, ErrorBoundary, and Light-Themed Kanban Board), refer to:
+> 👉 **[`Steps2.md`](./Steps2.md)** (Steps 36–48 verified and committed).
+
