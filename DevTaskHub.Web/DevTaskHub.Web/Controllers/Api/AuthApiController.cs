@@ -1,5 +1,6 @@
 using DevTaskHub.Web.DTOs.Auth;
 using DevTaskHub.Web.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevTaskHub.Web.Controllers.Api
@@ -19,12 +20,8 @@ namespace DevTaskHub.Web.Controllers.Api
         }
 
         /// <summary>
-        /// Registers a new corporate developer or team member with PBKDF2 credential protection.
+        /// Registers a new developer or administrator account in the system.
         /// </summary>
-        /// <param name="request">Registration credentials and identity attributes.</param>
-        /// <returns>Sanitized user account profile.</returns>
-        /// <response code="201">User account provisioned successfully.</response>
-        /// <response code="400">Input validation failed or email already registered.</response>
         [HttpPost("register")]
         [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -48,13 +45,8 @@ namespace DevTaskHub.Web.Controllers.Api
         }
 
         /// <summary>
-        /// Authenticates user credentials and returns an enterprise JWT Bearer token with claims.
+        /// Authenticates user credentials, returns in-memory JWT Bearer token, and attaches HttpOnly refresh cookie.
         /// </summary>
-        /// <param name="request">User login credentials.</param>
-        /// <returns>Authentication response payload with JWT access token and profile.</returns>
-        /// <response code="200">Credentials authenticated successfully.</response>
-        /// <response code="400">Validation failed on request body.</response>
-        /// <response code="401">Invalid credentials provided.</response>
         [HttpPost("login")]
         [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -69,6 +61,10 @@ namespace DevTaskHub.Web.Controllers.Api
             try
             {
                 var response = await _authService.LoginAsync(request);
+
+                // Bank-Grade Security: Attach refresh token to HttpOnly cookie (immune to XSS)
+                SetRefreshTokenCookie(response.RefreshToken);
+
                 return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
@@ -79,27 +75,29 @@ namespace DevTaskHub.Web.Controllers.Api
         }
 
         /// <summary>
-        /// Exchanges an active refresh token for a newly-minted JWT access token and rotated refresh token.
+        /// Rotates the refresh token. Reads from cookie or payload, mints fresh JWT access token.
         /// </summary>
-        /// <param name="request">Persistent refresh token.</param>
-        /// <returns>Fresh JWT access token pair.</returns>
-        /// <response code="200">Token pair rotated and issued successfully.</response>
-        /// <response code="400">Validation failure on request payload.</response>
-        /// <response code="401">Refresh token is expired, revoked, or invalid.</response>
         [HttpPost("refresh")]
         [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto? request)
         {
-            if (!ModelState.IsValid)
+            // Read from request body or fallback to secure HttpOnly cookie
+            var token = request?.RefreshToken ?? Request.Cookies["refreshToken"];
+
+            if (string.IsNullOrWhiteSpace(token))
             {
-                return BadRequest(ModelState);
+                return Unauthorized(new { message = "No refresh token provided in payload or cookie." });
             }
 
             try
             {
-                var response = await _authService.RefreshTokenAsync(request);
+                var response = await _authService.RefreshTokenAsync(new RefreshTokenRequestDto { RefreshToken = token });
+
+                // Rotate and set fresh cookie
+                SetRefreshTokenCookie(response.RefreshToken);
+
                 return Ok(response);
             }
             catch (UnauthorizedAccessException ex)
@@ -108,6 +106,37 @@ namespace DevTaskHub.Web.Controllers.Api
                 return Unauthorized(new { message = ex.Message });
             }
         }
+
+        [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("refreshToken", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/api/auth"
+            });
+
+            return Ok(new { message = "Logged out successfully. Refresh session terminated." });
+        }
+
+        /// <summary>
+        /// Helper: Appends cryptographically secure HttpOnly cookie.
+        /// </summary>
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = Request.IsHttps, // Adapts to http (dev) and https (prod)
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(7),
+                Path = "/api/auth"
+            };
+
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
     }
 }
-

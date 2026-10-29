@@ -11,6 +11,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriorityType>('Medium');
+  const [gitHubPrNumber, setGitHubPrNumber] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -27,19 +28,23 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
     }
 
     setError('');
-    // Lifting state up to parent App.tsx
+    const parsedPr = gitHubPrNumber.trim() ? parseInt(gitHubPrNumber.trim(), 10) : undefined;
+
+    // Lifting state up to parent TasksPage
     onAddTask({
       title: trimmedTitle,
       description: description.trim() || undefined,
       priority,
       status: 'Todo',
-      projectId: 1, // Default Enterprise Project
+      projectId: 1, // Will be linked to active project in TasksPage
+      gitHubPrNumber: parsedPr && !isNaN(parsedPr) ? parsedPr : undefined,
     });
 
     // Reset controlled inputs
     setTitle('');
     setDescription('');
     setPriority('Medium');
+    setGitHubPrNumber('');
   };
 
   return (
@@ -68,6 +73,14 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onAddTask }) => {
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+
+        <Input
+          label="GitHub PR # (Optional)"
+          placeholder="e.g. 1403"
+          type="number"
+          value={gitHubPrNumber}
+          onChange={(e) => setGitHubPrNumber(e.target.value)}
+        />
 
         <div className={styles.row}>
           <div className={styles.fieldGroup}>

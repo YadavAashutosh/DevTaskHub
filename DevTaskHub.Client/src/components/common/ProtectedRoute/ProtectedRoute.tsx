@@ -1,32 +1,38 @@
 import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../hooks';
 
 interface ProtectedRouteProps {
-  isAuthenticated: boolean;
   requiredRole?: 'Admin' | 'Developer' | 'ProjectManager';
-  userRole?: string;
   redirectTo?: string;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  isAuthenticated,
   requiredRole,
-  userRole,
   redirectTo = '/login',
 }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // 1. Agar user logged in nahi hai, toh login page par bhejein
-  // saath me current location save kar rahe hain taaki login ke baad wapas yahi redirect ho sake
+  // 1. Session restore in flight -> show clean loader
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: 'var(--text-muted)' }}>
+        Restoring secure session...
+      </div>
+    );
+  }
+
+  // 2. Not authenticated -> Redirect to /login with target location preserved in state
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // 2. Agar specific role required hai aur user ka role match nahi karta
-  if (requiredRole && userRole !== requiredRole) {
+  // 3. Role-Based Access Control (RBAC) check
+  if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to="/" replace />;
   }
 
-  // 3. User authenticated aur authorized hai
+  // 4. Authorized -> Render nested route
   return <Outlet />;
 };

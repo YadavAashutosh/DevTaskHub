@@ -166,3 +166,34 @@
   background-color: #fee2e2;
   border-color: #fca5a5;
 }
+.prLink {
+  text-decoration: none;
+  display: inline-flex;
+}
+
+.prLink:hover {
+  opacity: 0.85;
+}
+
+.prIcon {
+  font-weight: 700;
+  margin-right: 3px;
+}
+
+.linkPrBtn {
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  border-radius: 12px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.linkPrBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background-color: #faf5ff;
+}

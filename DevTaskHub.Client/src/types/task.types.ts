@@ -23,6 +23,7 @@ export interface CreateTaskDto {
   status: TaskStatusType;
   priority: TaskPriorityType;
   projectId: number;
+  gitHubPrNumber?: number | null;
   assignedUserId?: number | null;
   dueDate?: string | null;
 }
@@ -32,6 +33,7 @@ export interface UpdateTaskDto {
   description?: string;
   status: TaskStatusType;
   priority: TaskPriorityType;
+  gitHubPrNumber?: number | null;
   assignedUserId?: number | null;
   dueDate?: string | null;
 }

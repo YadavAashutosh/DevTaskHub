@@ -47,6 +47,21 @@ builder.Services.AddScoped<DevTaskHub.Web.Services.IAuthService, DevTaskHub.Web.
 builder.Services.AddScoped<DevTaskHub.Web.Services.IJwtTokenGenerator, DevTaskHub.Web.Services.JwtTokenGenerator>();
 builder.Services.AddSingleton<DevTaskHub.Web.Services.IKeyVaultService, DevTaskHub.Web.Services.KeyVaultService>();
 
+// Register Service / Repository Layer
+builder.Services.AddScoped<DevTaskHub.Web.Services.ITaskService, DevTaskHub.Web.Services.TaskService>();
+builder.Services.AddScoped<DevTaskHub.Web.Services.IAuthService, DevTaskHub.Web.Services.AuthService>();
+builder.Services.AddScoped<DevTaskHub.Web.Services.IJwtTokenGenerator, DevTaskHub.Web.Services.JwtTokenGenerator>();
+builder.Services.AddSingleton<DevTaskHub.Web.Services.IKeyVaultService, DevTaskHub.Web.Services.KeyVaultService>();
+
+// --- 3B. HTTP CLIENT & GITHUB SERVICE REGISTRATION ---
+builder.Services.AddHttpClient("GitHubClient", client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.DefaultRequestHeaders.Add("User-Agent", "DevTaskHub-Platform/1.0");
+    client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+});
+builder.Services.AddScoped<DevTaskHub.Web.Services.IGitHubService, DevTaskHub.Web.Services.GitHubService>();
+
 // --- 4. JWT AUTHENTICATION CONFIGURATION ---
 var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
 var jwtSettings = jwtSection.Get<JwtSettings>() ?? new JwtSettings();
@@ -82,6 +97,18 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// --- CORS POLICY (Supports Secure Cookie Exchange with React SPA) ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevTaskHubCorsPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 // Controllers & Views
 builder.Services.AddControllersWithViews();
@@ -130,6 +157,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// 🌐 CORS must execute after Routing and before Authentication/Authorization
+app.UseCors("DevTaskHubCorsPolicy");
 
 // 🛡️ JWT Authentication pehle execute hogi, phir Authorization (Roles)
 app.UseAuthentication();

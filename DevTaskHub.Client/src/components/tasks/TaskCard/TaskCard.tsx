@@ -7,9 +7,15 @@ export interface TaskCardProps {
   task: TaskDto;
   onToggleStatus: (id: number) => void;
   onDelete: (id: number) => void;
+  onOpenLinkPrModal?: (taskId: number) => void;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleStatus, onDelete }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ 
+  task, 
+  onToggleStatus, 
+  onDelete, 
+  onOpenLinkPrModal 
+}) => {
   const getPriorityBadgeVariant = (priority: TaskPriorityType): 'red' | 'yellow' | 'neutral' => {
     switch (priority) {
       case 'High':
@@ -48,13 +54,39 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleStatus, onDele
         <p className={styles.cardDescription}>{task.description}</p>
       )}
 
-      {/* Tags & Badges Row (Using Atomic Badge Component) */}
+      {/* Tags & Badges Row (Atomic Badge Component & GitHub PR) */}
       <div className={styles.cardTagsRow}>
         <Badge variant={getPriorityBadgeVariant(task.priority)}>
           🚩 {task.priority}
         </Badge>
-        {task.gitHubPrNumber && (
-          <Badge variant="purple">PR #{task.gitHubPrNumber}</Badge>
+
+        {task.gitHubPrNumber ? (
+          <a
+            href={`https://github.com/dotnet/aspnetcore/pull/${task.gitHubPrNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.prLink}
+            onClick={(e) => e.stopPropagation()}
+            title={`View GitHub PR #${task.gitHubPrNumber} in a new tab`}
+          >
+            <Badge variant="purple">
+              <span className={styles.prIcon}>⎇</span> PR #{task.gitHubPrNumber} ↗
+            </Badge>
+          </a>
+        ) : (
+          onOpenLinkPrModal && (
+            <button
+              type="button"
+              className={styles.linkPrBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenLinkPrModal(task.id);
+              }}
+              title="Link a GitHub Pull Request to this task"
+            >
+              + Link PR
+            </button>
+          )
         )}
       </div>
 
@@ -86,4 +118,3 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggleStatus, onDele
     </div>
   );
 };
-

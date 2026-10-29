@@ -1,26 +1,25 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Button } from '../../common/Button';
+import { useAuth } from '../../../hooks';
 import styles from './Navbar.module.css';
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-  username?: string;
-  onLogout?: () => void;
-}
+export const Navbar: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
 
-export const Navbar: React.FC<NavbarProps> = ({
-  isAuthenticated = false,
-  username = '',
-  onLogout
-}) => {
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.container}>
         {/* Brand Logo */}
         <Link to="/" className={styles.brand}>
           <div className={styles.brandIcon}>D</div>
-          <span>DevTask<span style={{ color: 'var(--accent, #aa3bff)' }}>Hub</span></span>
+          <span>DevTask<span style={{ color: 'var(--accent, #2563eb)' }}>Hub</span></span>
         </Link>
 
         {/* Center Nav Links */}
@@ -51,12 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Auth Section */}
         <div className={styles.authSection}>
-          {isAuthenticated ? (
+          {isAuthenticated && user ? (
             <>
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-muted, #71717a)' }}>
-                Welcome, <strong>{username}</strong>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Welcome, <strong>{user.fullName}</strong>
               </span>
-              <Button variant="ghost" size="sm" onClick={onLogout}>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </>

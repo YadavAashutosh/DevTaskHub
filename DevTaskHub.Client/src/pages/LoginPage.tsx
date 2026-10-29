@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '../components/auth';
+import { useAuth } from '../hooks';
 import type { LoginRequestDto } from '../types';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // User jis page se aaya tha wahan wapas bhejne ke liye (default: /tasks)
+  // Return to requested protected route after login, or default to /tasks
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/tasks';
 
   const handleLogin = async (credentials: LoginRequestDto) => {
@@ -17,13 +19,14 @@ export const LoginPage: React.FC = () => {
     setErrorMessage(null);
 
     try {
-      // UX review delay (Day 7 me yahan real .NET API call aayegi)
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      console.log('Login attempt:', credentials);
-
+      // 🛡️ Live secure authentication (Zero console.log of passwords)
+      await login(credentials);
       navigate(from, { replace: true });
-    } catch {
-      setErrorMessage('Invalid corporate credentials. Please check your email and password.');
+    } catch (err: unknown) {
+      const serverMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        'Invalid corporate credentials. Please verify your email and password.';
+      setErrorMessage(serverMessage);
     } finally {
       setIsLoading(false);
     }
