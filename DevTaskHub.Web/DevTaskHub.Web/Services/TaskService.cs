@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
 using DevTaskHub.Web.Data;
 using DevTaskHub.Web.DTOs.Common;
 using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevTaskHub.Web.Services
 {
@@ -15,61 +15,65 @@ namespace DevTaskHub.Web.Services
             _context = context;
         }
 
-        // Production-Grade Deferred IQueryable Pipeline
         public async Task<PagedResponse<TaskDto>> GetTasksAsync(TaskQueryParameters parameters)
         {
+            // 1. Base Query with Relational Joins & Soft Delete Filter
             var query = _context.Tasks
                 .Include(t => t.Project)
                 .Include(t => t.AssignedUser)
-                .AsNoTracking()
-                .AsQueryable();
+                .Include(t => t.PullRequests)
+                .Where(t => t.DeletedAtUtc == null)
+                .AsNoTracking();
 
-            // 1. Keyword Search (Title or Description)
-            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-            {
-                var search = parameters.SearchTerm.Trim().ToLower();
-                query = query.Where(t => t.Title.ToLower().Contains(search) ||
-                                         (t.Description != null && t.Description.ToLower().Contains(search)));
-            }
-
-            // 2. Filter by Status
-            if (!string.IsNullOrWhiteSpace(parameters.Status))
-            {
-                query = query.Where(t => t.Status == parameters.Status);
-            }
-
-            // 3. Filter by Priority
-            if (!string.IsNullOrWhiteSpace(parameters.Priority))
-            {
-                query = query.Where(t => t.Priority == parameters.Priority);
-            }
-
-            // 4. Filter by ProjectId
+            // 2. Filtering by ProjectId
             if (parameters.ProjectId.HasValue)
             {
                 query = query.Where(t => t.ProjectId == parameters.ProjectId.Value);
             }
 
-            // 5. Filter by AssignedUserId
+            // 3. Filtering by Assigned Developer
             if (parameters.AssignedUserId.HasValue)
             {
                 query = query.Where(t => t.AssignedUserId == parameters.AssignedUserId.Value);
             }
 
-            // Total count of matching records (before pagination)
+            // 4. Filtering by Status
+            if (!string.IsNullOrWhiteSpace(parameters.Status))
+            {
+                query = query.Where(t => t.Status.ToLower() == parameters.Status.Trim().ToLower());
+            }
+
+            // 5. Filtering by Priority
+            if (!string.IsNullOrWhiteSpace(parameters.Priority))
+            {
+                query = query.Where(t => t.Priority.ToLower() == parameters.Priority.Trim().ToLower());
+            }
+
+            // 6. Free-Text Search across Title and Description
+            if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+            {
+                var term = parameters.SearchTerm.Trim().ToLower();
+                query = query.Where(t => t.Title.ToLower().Contains(term) ||
+                                         (t.Description != null && t.Description.ToLower().Contains(term)));
+            }
+
+            // Compute Total Records before Pagination
             var totalRecords = await query.CountAsync();
 
-            // 6. Dynamic Column Sorting
-            query = parameters.SortBy?.ToLower() switch
+            // Dynamic Sorting
+            query = (parameters.SortBy?.ToLower(), parameters.IsAscending) switch
             {
-                "title" => parameters.IsAscending ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title),
-                "priority" => parameters.IsAscending ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
-                "status" => parameters.IsAscending ? query.OrderBy(t => t.Status) : query.OrderByDescending(t => t.Status),
-                "duedate" => parameters.IsAscending ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate),
-                _ => parameters.IsAscending ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
+                ("title", true) => query.OrderBy(t => t.Title),
+                ("title", false) => query.OrderByDescending(t => t.Title),
+                ("priority", true) => query.OrderBy(t => t.Priority),
+                ("priority", false) => query.OrderByDescending(t => t.Priority),
+                ("status", true) => query.OrderBy(t => t.Status),
+                ("status", false) => query.OrderByDescending(t => t.Status),
+                ("createdat", true) => query.OrderBy(t => t.CreatedAt),
+                _ => query.OrderByDescending(t => t.CreatedAt)
             };
 
-            // 7. Server-Side Pagination (Skip & Take)
+            // Server-Side Pagination (Skip & Take)
             var tasks = await query
                 .Skip((parameters.PageNumber - 1) * parameters.PageSize)
                 .Take(parameters.PageSize)
@@ -81,13 +85,19 @@ namespace DevTaskHub.Web.Services
                     Status = t.Status,
                     Priority = t.Priority,
                     GitHubPrNumber = t.GitHubPrNumber,
+                    GitHubPrStatus = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.State).FirstOrDefault(),
+                    GitHubPrUrl = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.PullRequestUrl).FirstOrDefault(),
+                    GitHubPrTitle = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.Title).FirstOrDefault(),
+                    GitHubPrIsMerged = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => (bool?)p.IsMerged).FirstOrDefault(),
                     DueDate = t.DueDate,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
                     ProjectId = t.ProjectId,
                     ProjectName = t.Project != null ? t.Project.Name : "Unassigned",
                     AssignedUserId = t.AssignedUserId,
-                    AssignedUserEmail = t.AssignedUser != null ? t.AssignedUser.Email : null
+                    AssignedUserEmail = t.AssignedUser != null ? t.AssignedUser.Email : null,
+                    AssignedUserFullName = t.AssignedUser != null ? t.AssignedUser.FullName : null,
+                    AssignedUserGitHubUsername = t.AssignedUser != null ? t.AssignedUser.GitHubUsername : null
                 })
                 .ToListAsync();
 
@@ -99,6 +109,7 @@ namespace DevTaskHub.Web.Services
             return await _context.Tasks
                 .Include(t => t.Project)
                 .Include(t => t.AssignedUser)
+                .Include(t => t.PullRequests)
                 .AsNoTracking()
                 .Select(t => new TaskDto
                 {
@@ -108,13 +119,19 @@ namespace DevTaskHub.Web.Services
                     Status = t.Status,
                     Priority = t.Priority,
                     GitHubPrNumber = t.GitHubPrNumber,
+                    GitHubPrStatus = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.State).FirstOrDefault(),
+                    GitHubPrUrl = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.PullRequestUrl).FirstOrDefault(),
+                    GitHubPrTitle = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.Title).FirstOrDefault(),
+                    GitHubPrIsMerged = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => (bool?)p.IsMerged).FirstOrDefault(),
                     DueDate = t.DueDate,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
                     ProjectId = t.ProjectId,
                     ProjectName = t.Project != null ? t.Project.Name : "Unassigned",
                     AssignedUserId = t.AssignedUserId,
-                    AssignedUserEmail = t.AssignedUser != null ? t.AssignedUser.Email : null
+                    AssignedUserEmail = t.AssignedUser != null ? t.AssignedUser.Email : null,
+                    AssignedUserFullName = t.AssignedUser != null ? t.AssignedUser.FullName : null,
+                    AssignedUserGitHubUsername = t.AssignedUser != null ? t.AssignedUser.GitHubUsername : null
                 })
                 .ToListAsync();
         }
@@ -124,10 +141,13 @@ namespace DevTaskHub.Web.Services
             var task = await _context.Tasks
                 .Include(t => t.Project)
                 .Include(t => t.AssignedUser)
+                .Include(t => t.PullRequests)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null) return null;
+
+            var latestPr = task.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).FirstOrDefault();
 
             return new TaskDto
             {
@@ -137,13 +157,19 @@ namespace DevTaskHub.Web.Services
                 Status = task.Status,
                 Priority = task.Priority,
                 GitHubPrNumber = task.GitHubPrNumber,
+                GitHubPrStatus = latestPr?.State,
+                GitHubPrUrl = latestPr?.PullRequestUrl,
+                GitHubPrTitle = latestPr?.Title,
+                GitHubPrIsMerged = latestPr?.IsMerged,
                 DueDate = task.DueDate,
                 CreatedAt = task.CreatedAt,
                 UpdatedAt = task.UpdatedAt,
                 ProjectId = task.ProjectId,
                 ProjectName = task.Project != null ? task.Project.Name : "Unassigned",
                 AssignedUserId = task.AssignedUserId,
-                AssignedUserEmail = task.AssignedUser != null ? task.AssignedUser.Email : null
+                AssignedUserEmail = task.AssignedUser != null ? task.AssignedUser.Email : null,
+                AssignedUserFullName = task.AssignedUser != null ? task.AssignedUser.FullName : null,
+                AssignedUserGitHubUsername = task.AssignedUser != null ? task.AssignedUser.GitHubUsername : null
             };
         }
 
@@ -166,6 +192,47 @@ namespace DevTaskHub.Web.Services
             _context.Tasks.Add(taskEntity);
             await _context.SaveChangesAsync();
 
+            // Record initial creation in history
+            try
+            {
+                _context.TaskStatusHistories.Add(new TaskStatusHistory
+                {
+                    TaskId = taskEntity.Id,
+                    OldStatus = "None",
+                    NewStatus = taskEntity.Status,
+                    ChangeReason = "Task Created",
+                    ChangedAtUtc = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                // Non-blocking history record
+            }
+
+            // Record initial PR in TaskPullRequests if provided
+            if (dto.GitHubPrNumber.HasValue && dto.GitHubPrNumber.Value > 0)
+            {
+                try
+                {
+                    _context.TaskPullRequests.Add(new TaskPullRequest
+                    {
+                        TaskId = taskEntity.Id,
+                        PullRequestNumber = dto.GitHubPrNumber.Value,
+                        PullRequestUrl = $"https://github.com/YadavAashutosh/DevTaskHub/pull/{dto.GitHubPrNumber.Value}",
+                        Title = $"Pull Request #{dto.GitHubPrNumber.Value}",
+                        State = "open",
+                        IsMerged = false,
+                        LastSyncedAtUtc = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception)
+                {
+                    // Non-blocking PR association
+                }
+            }
+
             return await GetTaskByIdAsync(taskEntity.Id) ?? new TaskDto { Id = taskEntity.Id, Title = taskEntity.Title };
         }
 
@@ -173,6 +240,35 @@ namespace DevTaskHub.Web.Services
         {
             var task = await _context.Tasks.FindAsync(id);
             if (task == null) return null;
+
+            // Track status transition in dbo.TaskStatusHistories
+            if (!string.Equals(task.Status, dto.Status, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    _context.TaskStatusHistories.Add(new TaskStatusHistory
+                    {
+                        TaskId = task.Id,
+                        OldStatus = task.Status,
+                        NewStatus = dto.Status,
+                        ChangeReason = "Status Updated",
+                        ChangedAtUtc = DateTime.UtcNow
+                    });
+                }
+                catch (Exception)
+                {
+                    // Non-blocking status history audit
+                }
+            }
+
+            if (string.Equals(dto.Status, "Done", StringComparison.OrdinalIgnoreCase))
+            {
+                task.CompletedAtUtc = DateTime.UtcNow;
+            }
+            else
+            {
+                task.CompletedAtUtc = null;
+            }
 
             task.Title = dto.Title;
             task.Description = dto.Description;
@@ -196,6 +292,25 @@ namespace DevTaskHub.Web.Services
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<TaskStatusHistoryDto>> GetTaskHistoryAsync(int taskId)
+        {
+            return await _context.TaskStatusHistories
+                .Where(h => h.TaskId == taskId)
+                .Include(h => h.ChangedByUser)
+                .OrderByDescending(h => h.ChangedAtUtc)
+                .Select(h => new TaskStatusHistoryDto
+                {
+                    Id = h.Id,
+                    TaskId = h.TaskId,
+                    OldStatus = h.OldStatus,
+                    NewStatus = h.NewStatus,
+                    ChangedByName = h.ChangedByUser != null ? (h.ChangedByUser.FullName ?? h.ChangedByUser.Email) : "System",
+                    ChangeReason = h.ChangeReason,
+                    ChangedAtUtc = h.ChangedAtUtc
+                })
+                .ToListAsync();
         }
     }
 }

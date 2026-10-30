@@ -1,4 +1,4 @@
-﻿using DevTaskHub.Web.DTOs.Common;
+using DevTaskHub.Web.DTOs.Common;
 using DevTaskHub.Web.DTOs.Tasks;
 
 namespace DevTaskHub.Web.Services
@@ -13,5 +13,6 @@ namespace DevTaskHub.Web.Services
         Task<TaskDto> CreateTaskAsync(CreateTaskDto dto);
         Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskDto dto);
         Task<bool> DeleteTaskAsync(int id);
+        Task<List<TaskStatusHistoryDto>> GetTaskHistoryAsync(int taskId);
     }
 }

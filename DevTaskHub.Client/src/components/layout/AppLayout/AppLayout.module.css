@@ -1,14 +1,188 @@
-.layoutWrapper {
+.appContainer {
+  display: flex;
   min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Left Persistent Sidebar */
+.sidebar {
+  width: 220px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg, #fcfcfd);
+  justify-content: space-between;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+}
+
+.logoRow {
+  padding: 0 4px;
+  margin-bottom: 24px;
+}
+
+.brandTitle {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.navMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navItem {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  display: block;
+}
+
+.navItem:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.activeNavItem {
+  background-color: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.navItemDisabled {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3b8;
+  border-radius: 8px;
+  cursor: default;
+  display: block;
+}
+
+/* Bottom User Card in Sidebar */
+.sidebarBottom {
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userCardInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.userRole {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.signOutBtn {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+  text-align: left;
+  margin-top: 4px;
+}
+
+.signOutBtn:hover {
+  text-decoration: underline;
+}
+
+/* Main Workspace */
+.mainWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* Top Horizontal Header Bar */
+.topBar {
+  height: 60px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  box-sizing: border-box;
+}
+
+.topBarTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.topBarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatarCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
 }
 
 .mainContent {
   flex: 1;
-  max-width: 1200px;
+  padding: 0;
   width: 100%;
-  margin: 0 auto;
-  padding: 2rem 1.5rem;
+}
+
+.publicWrapper {
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }

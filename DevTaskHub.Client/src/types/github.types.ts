@@ -27,3 +27,29 @@ export interface LinkPullRequestDto {
   owner?: string;
   repo?: string;
 }
+
+export interface GitHubRepoDetailsDto {
+  id: number;
+  name: string;
+  fullName: string;
+  description?: string | null;
+  htmlUrl: string;
+  language?: string | null;
+  stargazersCount: number;
+  forksCount: number;
+  openIssuesCount: number;
+  defaultBranch: string;
+  pushedAt?: string | null;
+  ownerLogin?: string | null;
+  ownerAvatarUrl?: string | null;
+}
+
+export interface GitHubCommitDto {
+  sha: string;
+  shortSha: string;
+  message: string;
+  authorName: string;
+  authorAvatarUrl?: string | null;
+  date: string;
+  htmlUrl: string;
+}

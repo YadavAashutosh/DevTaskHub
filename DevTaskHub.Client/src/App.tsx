@@ -1,8 +1,22 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context';
 import { AppLayout } from './components/layout';
 import { ErrorBoundary, ProtectedRoute } from './components/common';
-import { TasksPage, LoginPage, RegisterPage, NotFoundPage } from './pages';
+import { LoginPage, RegisterPage, NotFoundPage } from './pages';
+
+// Lazy-loaded code-split protected workspace pages
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TasksPage = lazy(() => import('./pages/TasksPage'));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
+const UsersPage = lazy(() => import('./pages/UsersPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+
+const PageFallback = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#64748b', fontSize: '14px' }}>
+    Loading view...
+  </div>
+);
 
 function App() {
   return (
@@ -13,8 +27,54 @@ function App() {
             <Route element={<AppLayout />}>
               {/* 🛡️ Protected Task Workspace (Requires Authenticated Session) */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<TasksPage />} />
-                <Route path="/tasks" element={<TasksPage />} />
+                <Route
+                  path="/"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <DashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <DashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/tasks"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <TasksPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/projects"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <ProjectsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <UsersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <Suspense fallback={<PageFallback />}>
+                      <ProfilePage />
+                    </Suspense>
+                  }
+                />
               </Route>
 
               {/* Public Authentication Routes */}

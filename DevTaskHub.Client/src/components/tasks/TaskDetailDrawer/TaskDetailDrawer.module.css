@@ -1,0 +1,743 @@
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.drawerPanel {
+  width: 100%;
+  max-width: 560px;
+  background-color: #ffffff;
+  height: 100%;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawerHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8fafc;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.taskKey {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.statusSelect {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.closeBtn:hover {
+  background-color: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.titleSection {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.taskTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.projectTag {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metaDot {
+  color: var(--text-muted);
+}
+
+.dueDateText,
+.assigneeText {
+  color: var(--text-muted);
+}
+
+.tabNav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background-color: #ffffff;
+  padding: 0 20px;
+}
+
+.tabBtn {
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  color: var(--text-primary);
+}
+
+.activeTab {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+/* Overview Section */
+.overviewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionHeading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.descriptionText {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  background-color: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+/* GitHub Card */
+.githubCard {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.githubCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.githubCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gitIcon {
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.prActionBtnGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.secondarySmallBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.secondarySmallBtn:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.dangerSmallBtn {
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #e11d48;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dangerSmallBtn:hover {
+  background-color: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.syncFeedbackSuccess {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.syncFeedbackError {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.syncFeedbackWarning {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.multiInputPrForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.inputGridRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.prInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.prInputLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.prInputField {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.prInputField:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.prMainRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prExternalLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prExternalLink:hover {
+  text-decoration: underline;
+}
+
+.noPrText {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 8px 0;
+}
+
+.inlinePrInput {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  flex: 1;
+  min-width: 140px;
+}
+
+.inlinePrInput:focus {
+  border-color: var(--accent);
+}
+
+/* Comments Section */
+.commentsSection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.commentList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.emptyComments {
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.emptyComments span {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.commentItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.commentAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.commentBubble {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  flex: 1;
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.authorMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.commentAuthor {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.commentDate {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.editedTag {
+  font-size: 10px;
+  font-style: italic;
+  color: #64748b;
+  background-color: #e2e8f0;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.commentActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.commentIconBtn {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.commentIconBtn:hover {
+  opacity: 1;
+  background-color: #e2e8f0;
+}
+
+.commentBody {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.inlineEditCommentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inlineEditActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.addCommentForm {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.commentTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.commentTextarea:focus {
+  border-color: var(--accent);
+}
+
+/* Timeline */
+.timelineList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 10px;
+  padding-left: 16px;
+}
+
+.timelineItem {
+  position: relative;
+}
+
+.timelineDot {
+  position: absolute;
+  left: -21px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent);
+}
+
+.timelineTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 2px 0;
+}
+
+.statusPill {
+  background-color: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.timelineDate {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.loadingText {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 20px 0;
+}
+
+/* GitHub Repository Live Card */
+.githubRepoCard {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.repoCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.repoTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repoIcon {
+  font-size: 16px;
+}
+
+.repoLink {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.repoLink:hover {
+  text-decoration: underline;
+}
+
+.languageBadge {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.repoDesc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.repoStatsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Commits Section */
+.commitsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.commitList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.commitRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  gap: 12px;
+}
+
+.commitLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.commitMsg {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commitMeta {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.commitShaPill {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.commitShaPill:hover {
+  background-color: #e2e8f0;
+}
+
+.commitsHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.commitsErrorBanner {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.retryBtn {
+  background: #f59e0b;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.retryBtn:hover {
+  opacity: 0.9;
+}
+
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}

@@ -1,4 +1,4 @@
-﻿namespace DevTaskHub.Web.DTOs.Tasks
+namespace DevTaskHub.Web.DTOs.Tasks
 {
     public class TaskDto
     {
@@ -7,7 +7,14 @@
         public string? Description { get; set; }
         public string Status { get; set; } = "Todo";
         public string Priority { get; set; } = "Medium";
+        
+        // Live GitHub PR metadata from dbo.TaskPullRequests
         public int? GitHubPrNumber { get; set; }
+        public string? GitHubPrStatus { get; set; }
+        public string? GitHubPrUrl { get; set; }
+        public string? GitHubPrTitle { get; set; }
+        public bool? GitHubPrIsMerged { get; set; }
+
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
@@ -18,5 +25,7 @@
 
         public int? AssignedUserId { get; set; }
         public string? AssignedUserEmail { get; set; }
+        public string? AssignedUserFullName { get; set; }
+        public string? AssignedUserGitHubUsername { get; set; }
     }
 }

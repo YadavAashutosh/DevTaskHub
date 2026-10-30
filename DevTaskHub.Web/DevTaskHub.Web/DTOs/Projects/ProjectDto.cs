@@ -1,4 +1,4 @@
-﻿namespace DevTaskHub.Web.DTOs.Projects
+namespace DevTaskHub.Web.DTOs.Projects
 {
     public class ProjectDto
     {
@@ -12,5 +12,6 @@
         public DateTime CreatedAt { get; set; }
         public int TotalTasks { get; set; }
         public int CompletedTasks { get; set; }
+        public int TotalMembers { get; set; }
     }
 }
