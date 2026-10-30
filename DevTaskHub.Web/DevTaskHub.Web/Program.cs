@@ -3,6 +3,7 @@ using Azure.Identity;
 using DevTaskHub.Web.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,20 +48,23 @@ builder.Services.AddScoped<DevTaskHub.Web.Services.IAuthService, DevTaskHub.Web.
 builder.Services.AddScoped<DevTaskHub.Web.Services.IJwtTokenGenerator, DevTaskHub.Web.Services.JwtTokenGenerator>();
 builder.Services.AddSingleton<DevTaskHub.Web.Services.IKeyVaultService, DevTaskHub.Web.Services.KeyVaultService>();
 
-// Register Service / Repository Layer
-builder.Services.AddScoped<DevTaskHub.Web.Services.ITaskService, DevTaskHub.Web.Services.TaskService>();
-builder.Services.AddScoped<DevTaskHub.Web.Services.IAuthService, DevTaskHub.Web.Services.AuthService>();
-builder.Services.AddScoped<DevTaskHub.Web.Services.IJwtTokenGenerator, DevTaskHub.Web.Services.JwtTokenGenerator>();
-builder.Services.AddSingleton<DevTaskHub.Web.Services.IKeyVaultService, DevTaskHub.Web.Services.KeyVaultService>();
-
 // --- 3B. HTTP CLIENT & GITHUB SERVICE REGISTRATION ---
+// Read optional GitHub PAT for 5,000 req/hr (unauthenticated = only 60 req/hr)
+var gitHubToken = builder.Configuration["GitHub:Token"];
 builder.Services.AddHttpClient("GitHubClient", client =>
 {
     client.BaseAddress = new Uri("https://api.github.com/");
     client.DefaultRequestHeaders.Add("User-Agent", "DevTaskHub-Platform/1.0");
     client.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
+    if (!string.IsNullOrWhiteSpace(gitHubToken))
+    {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {gitHubToken}");
+    }
 });
 builder.Services.AddScoped<DevTaskHub.Web.Services.IGitHubService, DevTaskHub.Web.Services.GitHubService>();
+
+// In-Memory Cache for GitHub API responses (10-min TTL to avoid 60 req/hr limit)
+builder.Services.AddMemoryCache();
 
 // --- 4. JWT AUTHENTICATION CONFIGURATION ---
 var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
@@ -110,8 +114,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Controllers & Views
-builder.Services.AddControllersWithViews();
+// Controllers & Views (with JSON Cycle Protection)
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

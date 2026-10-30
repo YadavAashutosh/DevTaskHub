@@ -1,4 +1,4 @@
-export type TaskStatusType = 'Todo' | 'InProgress' | 'Done';
+export type TaskStatusType = 'Todo' | 'InProgress' | 'InReview' | 'Done';
 export type TaskPriorityType = 'Low' | 'Medium' | 'High';
 
 export interface TaskDto {
@@ -8,6 +8,10 @@ export interface TaskDto {
   status: TaskStatusType;
   priority: TaskPriorityType;
   gitHubPrNumber?: number | null;
+  gitHubPrStatus?: 'open' | 'closed' | 'merged' | string | null;
+  gitHubPrUrl?: string | null;
+  gitHubPrTitle?: string | null;
+  gitHubPrIsMerged?: boolean | null;
   dueDate?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -15,6 +19,8 @@ export interface TaskDto {
   projectName?: string | null;
   assignedUserId?: number | null;
   assignedUserEmail?: string | null;
+  assignedUserFullName?: string | null;
+  assignedUserGitHubUsername?: string | null;
 }
 
 export interface CreateTaskDto {

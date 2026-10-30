@@ -58,7 +58,8 @@ namespace DevTaskHub.Web.Controllers.Api
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return BadRequest(new { message = $"Validation failed: {errors}" });
             }
 
             var createdTask = await _taskService.CreateTaskAsync(dto);
@@ -76,16 +77,26 @@ namespace DevTaskHub.Web.Controllers.Api
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogWarning("UpdateTask validation failed for Task {Id}: {Errors}", id, errors);
+                return BadRequest(new { message = $"Validation failed: {errors}" });
             }
 
-            var updatedTask = await _taskService.UpdateTaskAsync(id, dto);
-            if (updatedTask == null)
+            try
             {
-                return NotFound(new { message = $"Cannot update task. Task with ID {id} was not found." });
-            }
+                var updatedTask = await _taskService.UpdateTaskAsync(id, dto);
+                if (updatedTask == null)
+                {
+                    return NotFound(new { message = $"Cannot update task. Task with ID {id} was not found." });
+                }
 
-            return Ok(updatedTask);
+                return Ok(updatedTask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating Task {Id}", id);
+                return StatusCode(500, new { message = $"An error occurred while updating the task: {ex.Message}" });
+            }
         }
 
         /// <summary>
@@ -106,6 +117,17 @@ namespace DevTaskHub.Web.Controllers.Api
             }
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Retrieves the complete status transition history for a task (dbo.TaskStatusHistories).
+        /// </summary>
+        [HttpGet("{id:int}/history")]
+        [ProducesResponseType(typeof(List<TaskStatusHistoryDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTaskHistory(int id)
+        {
+            var history = await _taskService.GetTaskHistoryAsync(id);
+            return Ok(history);
         }
     }
 }

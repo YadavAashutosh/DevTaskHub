@@ -1,76 +1,92 @@
 .formCard {
-  max-width: 640px;
-  margin: 0 auto 32px;
-}
-
-.formTitle {
-  font-size: 1.25rem;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
+  width: 100%;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .fieldGroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .label {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--text-h);
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
 }
 
 .textarea {
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--text-h);
-  background-color: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
   outline: none;
   resize: vertical;
-  transition: all 0.2s ease;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
 }
 
 .textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-.row {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
+.twoColRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.select {
-  padding: 10px 14px;
+@media (max-width: 600px) {
+  .twoColRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.select,
+.dateInput {
+  width: 100%;
+  padding: 8px 12px;
   font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--text-h);
-  background-color: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  font-size: 13px;
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
   outline: none;
-  cursor: pointer;
-  min-width: 130px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
 }
 
-.select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-bg);
+.select:focus,
+.dateInput:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
-.buttonWrapper {
-  margin-left: auto;
+.actionsRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
 }

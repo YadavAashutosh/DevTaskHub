@@ -1,14 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevTaskHub.Web.DTOs.Tasks
 {
     public class UpdateTaskDto
     {
         [Required(ErrorMessage = "Title is required.")]
-        [StringLength(150, MinimumLength = 3)]
+        [StringLength(150, MinimumLength = 1, ErrorMessage = "Title must be between 1 and 150 characters.")]
         public string Title { get; set; } = string.Empty;
 
-        [StringLength(1000)]
+        [StringLength(2000)]
         public string? Description { get; set; }
 
         [Required]
@@ -17,7 +17,6 @@ namespace DevTaskHub.Web.DTOs.Tasks
         [Required]
         public string Priority { get; set; } = "Medium";
 
-        [Range(1, int.MaxValue)]
         public int? GitHubPrNumber { get; set; }
 
         public DateTime? DueDate { get; set; }

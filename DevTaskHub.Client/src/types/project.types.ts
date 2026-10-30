@@ -9,6 +9,7 @@ export interface ProjectDto {
   createdAt: string;
   totalTasks: number;
   completedTasks: number;
+  totalMembers: number;
 }
 
 export interface CreateProjectDto {
@@ -17,4 +18,28 @@ export interface CreateProjectDto {
   description?: string;
   gitHubRepoOwner?: string;
   gitHubRepoName?: string;
+}
+
+export interface UpdateProjectDto {
+  name: string;
+  description?: string;
+  status?: string;
+  gitHubRepoOwner?: string;
+  gitHubRepoName?: string;
+}
+
+export interface ProjectMemberDto {
+  projectId: number;
+  userId: number;
+  fullName: string;
+  email: string;
+  role: string;
+  projectRole: string;
+  gitHubUsername?: string | null;
+  joinedAtUtc: string;
+}
+
+export interface AddProjectMemberDto {
+  userId: number;
+  projectRole: string;
 }
