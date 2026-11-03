@@ -25,6 +25,9 @@ export const ProjectsPage: React.FC = () => {
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const isPM = user?.role?.toLowerCase() === 'projectmanager';
   const canManageProjects = isAdmin || isPM;
+  const isDeveloper = user?.role?.toLowerCase() === 'developer';
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Archived' | 'Completed'>('All');
+  const availableFilters: Array<'All' | 'Active' | 'Archived' | 'Completed'> = isDeveloper ? ['All', 'Active', 'Completed'] : ['All', 'Active', 'Archived', 'Completed'];
 
   // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,9 +90,13 @@ export const ProjectsPage: React.FC = () => {
   }, []);
 
   const filteredProjects = useMemo(() => {
-    if (!debouncedSearch.trim()) return projects;
+    let list = projects;
+    if (statusFilter !== 'All') {
+      list = list.filter((p) => (p.status || 'Active').toLowerCase() === statusFilter.toLowerCase());
+    }
+    if (!debouncedSearch.trim()) return list;
     const q = debouncedSearch.toLowerCase();
-    return projects.filter(
+    return list.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         p.projectKey.toLowerCase().includes(q) ||
@@ -97,7 +104,7 @@ export const ProjectsPage: React.FC = () => {
         p.gitHubRepoName?.toLowerCase().includes(q) ||
         p.gitHubRepoOwner?.toLowerCase().includes(q)
     );
-  }, [projects, debouncedSearch]);
+  }, [projects, statusFilter, debouncedSearch]);
 
   const handleFetchUserRepos = async () => {
     if (!repoLookupUsername.trim()) return;
@@ -160,6 +167,18 @@ export const ProjectsPage: React.FC = () => {
       alert('Failed to create project. Please ensure Project Key is unique.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProject = async (id: number, projName: string) => {
+    if (!isAdmin) return;
+    if (!window.confirm(`Are you sure you want to delete project "${projName}"? All associated tasks will also be removed.`)) return;
+    try {
+      await projectService.deleteProject(id);
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      alert(axiosErr?.response?.data?.message || 'Failed to delete project.');
     }
   };
 
@@ -304,6 +323,20 @@ export const ProjectsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Project Status Filter Tabs */}
+      <div className={styles.filterTabs}>
+        {availableFilters.map((f) => (
+          <button
+            key={f}
+            type="button"
+            className={`${styles.filterTabBtn} ${statusFilter === f ? styles.filterTabBtnActive : ''}`}
+            onClick={() => setStatusFilter(f)}
+          >
+            {f} Projects
+          </button>
+        ))}
+      </div>
+
       {/* Content */}
       {isLoading ? (
         <div className={styles.loadingBox}>Loading projects...</div>
@@ -358,6 +391,16 @@ export const ProjectsPage: React.FC = () => {
                         title="Edit project details (Admin/PM only)"
                       >
                         ✏️ Edit
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className={styles.deleteProjectBtn}
+                        onClick={() => handleDeleteProject(proj.id, proj.name)}
+                        title="Delete project (Admin only)"
+                      >
+                        🗑️
                       </button>
                     )}
                   </div>

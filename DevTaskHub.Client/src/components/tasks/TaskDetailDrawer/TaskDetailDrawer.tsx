@@ -7,6 +7,9 @@ import type {
   TaskStatusHistoryDto,
   GitHubRepoDetailsDto,
   GitHubCommitDto,
+  TaskPullRequest,
+  UserDto,
+  ProjectDto,
 } from '../../../types';
 import { Badge, Button } from '../../common';
 import { taskService, githubService } from '../../../services';
@@ -19,6 +22,8 @@ export interface TaskDetailDrawerProps {
   onClose: () => void;
   onStatusChange: (id: number, nextStatus: TaskStatusType) => void;
   onTaskUpdated?: (updatedTask: TaskDto) => void;
+  users?: UserDto[];
+  projects?: ProjectDto[];
 }
 
 export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
@@ -27,6 +32,8 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   onClose,
   onStatusChange,
   onTaskUpdated,
+  users: _users = [],
+  projects = [],
 }) => {
   const { user } = useAuth();
   const [currentTask, setCurrentTask] = useState<TaskDto | null>(task);
@@ -47,18 +54,19 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const [history, setHistory] = useState<TaskStatusHistoryDto[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // GitHub Sync state
-  const [isSyncingGitHub, setIsSyncingGitHub] = useState(false);
+  // Multi-PR state
+  const [linkedPrs, setLinkedPrs] = useState<TaskPullRequest[]>([]);
+  const [isAddingPr, setIsAddingPr] = useState(false);
+  const [syncingPrNumber, setSyncingPrNumber] = useState<number | null>(null);
+  const [unlinkingPrNumber, setUnlinkingPrNumber] = useState<number | null>(null);
   const [githubSyncFeedback, setGithubSyncFeedback] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
-  // Inline Link / Change PR state (Individual fields + Quick URL)
+  // Inline Link PR form state (Individual fields + Quick URL)
   const [inlinePrNumber, setInlinePrNumber] = useState('');
   const [inlineOwner, setInlineOwner] = useState('');
   const [inlineRepo, setInlineRepo] = useState('');
   const [inlineUrl, setInlineUrl] = useState('');
   const [isLinkingInlinePr, setIsLinkingInlinePr] = useState(false);
-  const [isEditingPr, setIsEditingPr] = useState(false);
-  const [isUnlinkingPr, setIsUnlinkingPr] = useState(false);
 
   // GitHub Repository & Commits state
   const [repoDetails, setRepoDetails] = useState<GitHubRepoDetailsDto | null>(null);
@@ -66,6 +74,33 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const [showCommits, setShowCommits] = useState(false);
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
   const [commitsError, setCommitsError] = useState<string | null>(null);
+  const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
+  const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
+
+  const handleAssigneeSelectChange = async (newUserIdStr: string) => {
+    if (!activeTask) return;
+    const newUserId = newUserIdStr ? Number(newUserIdStr) : undefined;
+    setIsUpdatingAssignee(true);
+    try {
+      const updated = await taskService.updateTask(activeTask.id, {
+        title: activeTask.title,
+        description: activeTask.description || undefined,
+        status: activeTask.status,
+        priority: activeTask.priority,
+        gitHubPrNumber: activeTask.gitHubPrNumber,
+        dueDate: activeTask.dueDate || undefined,
+        assignedUserId: newUserId,
+      });
+      if (updated) {
+        setCurrentTask(updated);
+        if (onTaskUpdated) onTaskUpdated(updated);
+      }
+    } catch (err) {
+      console.error('Failed to update task assignee:', err);
+    } finally {
+      setIsUpdatingAssignee(false);
+    }
+  };
 
   // Sync currentTask when task prop changes
   useEffect(() => {
@@ -150,16 +185,30 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     }
   };
 
+  const fetchTaskPrs = async (taskId: number) => {
+    try {
+      const prs = await githubService.getTaskPullRequests(taskId);
+      setLinkedPrs(prs);
+      if (prs.length > 0) {
+        const { owner, repo } = resolveOwnerRepo(task);
+        fetchRepoDetails(owner, repo);
+        handleLoadCommits(owner, repo);
+      }
+    } catch {
+      // Non-blocking
+    }
+  };
+
   // Fetch comments, history, and repo details when drawer opens or task changes
   useEffect(() => {
     if (!isOpen || !task) return;
 
     setGithubSyncFeedback(null);
+    setIsAddingPr(false);
     setInlinePrNumber(task.gitHubPrNumber ? String(task.gitHubPrNumber) : '');
     setInlineUrl(task.gitHubPrUrl || '');
     setInlineOwner('');
     setInlineRepo('');
-    setIsEditingPr(false);
     setEditingCommentId(null);
     setShowCommits(false);
     setRepoCommits([]);
@@ -167,9 +216,14 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
     fetchComments(task.id);
     fetchHistory(task.id);
+    if (task.pullRequests && task.pullRequests.length > 0) {
+      setLinkedPrs(task.pullRequests);
+    }
+    fetchTaskPrs(task.id);
     if (task.gitHubPrNumber) {
       const { owner, repo } = resolveOwnerRepo(task);
       fetchRepoDetails(owner, repo);
+      handleLoadCommits(owner, repo);
     } else {
       setRepoDetails(null);
     }
@@ -244,50 +298,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   // -------------------------------------------------------------
   // GITHUB PULL REQUEST HANDLERS (Sync, Link, Change, Unlink)
   // -------------------------------------------------------------
-
-  // Sync with GitHub Handler (Live POST /api/tasks/{id}/github/sync)
-  const handleSyncGitHub = async () => {
-    if (!activeTask.gitHubPrNumber || isSyncingGitHub) return;
-
-    setIsSyncingGitHub(true);
-    setGithubSyncFeedback(null);
-
-    try {
-      const syncedPr = await githubService.syncPullRequest(activeTask.id, activeTask.gitHubPrNumber);
-      const updated: TaskDto = {
-        ...activeTask,
-        gitHubPrStatus: syncedPr.state,
-        gitHubPrIsMerged: syncedPr.isMerged,
-        gitHubPrUrl: syncedPr.pullRequestUrl,
-        gitHubPrTitle: syncedPr.title,
-      };
-
-      setCurrentTask(updated);
-      onTaskUpdated?.(updated);
-      setGithubSyncFeedback({
-        message: `Synced live GitHub data: "${syncedPr.title}" [${(syncedPr.state || 'OPEN').toUpperCase()}]!`,
-        type: 'success',
-      });
-
-      const { owner, repo } = resolveOwnerRepo(updated);
-      fetchRepoDetails(owner, repo);
-      fetchHistory(activeTask.id);
-      if (showCommits) {
-        handleLoadCommits(owner, repo);
-      }
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
-      const status = axiosErr?.response?.status;
-      const msg = axiosErr?.response?.data?.message || `Failed to sync PR #${activeTask.gitHubPrNumber} with GitHub API.`;
-      const isRateLimit = status === 429 || msg.toLowerCase().includes('rate limit');
-      setGithubSyncFeedback({
-        message: isRateLimit ? `⚠️ ${msg}` : msg,
-        type: isRateLimit ? 'warning' : 'error',
-      });
-    } finally {
-      setIsSyncingGitHub(false);
-    }
-  };
 
   // Helper to sync URL when individual fields below change
   const syncUrlFromFields = (ownerVal: string, repoVal: string, prNumVal: string) => {
@@ -372,7 +382,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
       setCurrentTask(updated);
       onTaskUpdated?.(updated);
-      setIsEditingPr(false);
+      setIsAddingPr(false);
       setGithubSyncFeedback({
         message: `Connected to GitHub PR #${prNum} ("${linked.title || 'PR'}")!`,
         type: 'success',
@@ -383,9 +393,7 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
       const targetRepo = repo || resolveOwnerRepo(updated).repo;
       fetchRepoDetails(targetOwner, targetRepo);
       fetchHistory(activeTask.id);
-      if (showCommits) {
-        handleLoadCommits(targetOwner, targetRepo);
-      }
+      handleLoadCommits(targetOwner, targetRepo);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number; data?: { message?: string } } };
       const status = axiosErr?.response?.status;
@@ -402,51 +410,74 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     }
   };
 
-  // Unlink PR (Live DELETE /api/tasks/{id}/github/unlink)
-  const handleUnlinkPr = async () => {
-    if (!window.confirm(`Unlink PR #${activeTask.gitHubPrNumber} from this task?`)) return;
-
-    setIsUnlinkingPr(true);
+  // Sync a specific PR from the multi-PR list
+  const handleSyncSpecificPr = async (prNum: number) => {
+    if (!activeTask) return;
+    setSyncingPrNumber(prNum);
+    setGithubSyncFeedback(null);
     try {
-      await githubService.unlinkPullRequest(activeTask.id);
+      const synced = await githubService.syncPullRequest(activeTask.id, prNum);
+      setLinkedPrs((prev) => prev.map((p) => (p.pullRequestNumber === prNum ? synced : p)));
+
+      // Auto-advance task status to Done if PR merged
+      if (synced.isMerged && activeTask.status !== 'Done') {
+        const updatedDone: TaskDto = { ...activeTask, status: 'Done', gitHubPrIsMerged: true, gitHubPrStatus: 'merged' };
+        setCurrentTask(updatedDone);
+        onTaskUpdated?.(updatedDone);
+        await taskService.updateTask(activeTask.id, {
+          title: activeTask.title,
+          status: 'Done',
+          priority: activeTask.priority,
+        });
+        fetchHistory(activeTask.id);
+      }
+
+      setGithubSyncFeedback({
+        message: `PR #${prNum} synced! [${(synced.state || 'OPEN').toUpperCase()}]`,
+        type: 'success',
+      });
+    } catch {
+      setGithubSyncFeedback({
+        message: `Failed to sync PR #${prNum}.`,
+        type: 'error',
+      });
+    } finally {
+      setSyncingPrNumber(null);
+    }
+  };
+
+  // Unlink a specific PR from the multi-PR list
+  const handleUnlinkSpecificPr = async (prNum: number) => {
+    if (!activeTask) return;
+    if (!window.confirm(`Unlink PR #${prNum} from this task?`)) return;
+
+    setUnlinkingPrNumber(prNum);
+    try {
+      await githubService.unlinkPullRequest(activeTask.id, prNum);
+      const remaining = linkedPrs.filter((p) => p.pullRequestNumber !== prNum);
+      setLinkedPrs(remaining);
+
+      const latest = remaining[0];
       const updated: TaskDto = {
         ...activeTask,
-        gitHubPrNumber: undefined,
-        gitHubPrStatus: undefined,
-        gitHubPrIsMerged: undefined,
-        gitHubPrUrl: undefined,
-        gitHubPrTitle: undefined,
+        gitHubPrNumber: latest ? latest.pullRequestNumber : undefined,
+        gitHubPrStatus: latest ? latest.state : undefined,
+        gitHubPrIsMerged: latest ? latest.isMerged : undefined,
+        gitHubPrUrl: latest ? latest.pullRequestUrl : undefined,
+        gitHubPrTitle: latest ? latest.title : undefined,
       };
 
       setCurrentTask(updated);
       onTaskUpdated?.(updated);
-      setIsEditingPr(false);
-      setInlinePrNumber('');
-      setInlineUrl('');
-      setInlineOwner('');
-      setInlineRepo('');
-      setRepoDetails(null);
-      setRepoCommits([]);
-      setShowCommits(false);
-      setCommitsError(null);
       setGithubSyncFeedback({
-        message: 'Pull request unlinked successfully.',
+        message: `PR #${prNum} unlinked successfully.`,
         type: 'success',
       });
-
       fetchHistory(activeTask.id);
     } catch {
-      alert('Failed to unlink pull request.');
+      alert(`Failed to unlink PR #${prNum}.`);
     } finally {
-      setIsUnlinkingPr(false);
-    }
-  };
-
-  const getPriorityVariant = (priority: TaskPriorityType): 'red' | 'yellow' | 'neutral' => {
-    switch (priority) {
-      case 'High': return 'red';
-      case 'Medium': return 'yellow';
-      case 'Low': default: return 'neutral';
+      setUnlinkingPrNumber(null);
     }
   };
 
@@ -458,6 +489,29 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
     const isSameEmail = Boolean(user.email && comment.authorEmail && user.email.toLowerCase() === comment.authorEmail.toLowerCase());
     const isSameName = Boolean(user.fullName && comment.authorName && user.fullName.toLowerCase() === comment.authorName.toLowerCase());
     return (currentUserId > 0 && currentUserId === authorId) || isSameEmail || isSameName;
+  };
+
+  const handlePrioritySelectChange = async (nextPriority: TaskPriorityType) => {
+    if (!activeTask || isUpdatingPriority) return;
+    setIsUpdatingPriority(true);
+    const updated: TaskDto = { ...activeTask, priority: nextPriority };
+    setCurrentTask(updated);
+    onTaskUpdated?.(updated);
+    try {
+      await taskService.updateTask(activeTask.id, {
+        title: activeTask.title,
+        description: activeTask.description || undefined,
+        priority: nextPriority,
+        status: activeTask.status,
+        assignedUserId: activeTask.assignedUserId || undefined,
+        dueDate: activeTask.dueDate || undefined,
+      });
+      fetchHistory(activeTask.id);
+    } catch {
+      alert('Failed to update task priority.');
+    } finally {
+      setIsUpdatingPriority(false);
+    }
   };
 
   const handleStatusSelectChange = (nextStatus: TaskStatusType) => {
@@ -475,8 +529,21 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         <header className={styles.drawerHeader}>
           <div className={styles.headerLeft}>
             <span className={styles.taskKey}>#{activeTask.id}</span>
-            <Badge variant={getPriorityVariant(activeTask.priority)}>🚩 {activeTask.priority}</Badge>
             <div className={styles.statusDropdownWrapper}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Priority:</label>
+              <select
+                className={styles.statusSelect}
+                value={activeTask.priority}
+                disabled={isUpdatingPriority}
+                onChange={(e) => handlePrioritySelectChange(e.target.value as TaskPriorityType)}
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div className={styles.statusDropdownWrapper}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Status:</label>
               <select
                 className={styles.statusSelect}
                 value={activeTask.status}
@@ -487,6 +554,31 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 <option value="InReview">Review</option>
                 <option value="Done">Done</option>
               </select>
+            </div>
+
+            <div className={styles.statusDropdownWrapper}>
+              <label style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Assignee:</label>
+              <select
+                className={styles.statusSelect}
+                value={activeTask.assignedUserId || ''}
+                onChange={(e) => handleAssigneeSelectChange(e.target.value)}
+                disabled={isUpdatingAssignee}
+                title="Assign task to project member"
+              >
+                <option value="">ðŸ‘¤ Unassigned</option>
+                {(() => {
+                  const currentProj = projects.find((p) => p.id === activeTask.projectId);
+                  const assignableMembers = currentProj?.members && currentProj.members.length > 0
+                    ? currentProj.members
+                    : [];
+                  return assignableMembers.map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.fullName || m.email.split('@')[0]} ({m.projectRole || m.role})
+                    </option>
+                  ));
+                })()}
+              </select>
+              {isUpdatingAssignee && <span style={{ fontSize: '11px', marginLeft: '2px' }}>â³</span>}
             </div>
           </div>
 
@@ -569,53 +661,23 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                 </p>
               </div>
 
-              {/* GitHub Pull Request Live Card */}
+              {/* GitHub Pull Requests Multi-PR Live Card */}
               <div className={styles.githubCard}>
                 <div className={styles.githubCardHeader}>
                   <div className={styles.githubCardTitle}>
                     <span className={styles.gitIcon}>⎇</span>
-                    <span>GitHub Pull Request</span>
+                    <span>GitHub Pull Requests ({linkedPrs.length})</span>
                   </div>
 
-                  {activeTask.gitHubPrNumber && !isEditingPr && (
-                    <div className={styles.prActionBtnGroup}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleSyncGitHub}
-                        disabled={isSyncingGitHub}
-                      >
-                        {isSyncingGitHub ? 'Syncing...' : '🔄 Sync with GitHub'}
-                      </Button>
-                      <button
-                        type="button"
-                        className={styles.secondarySmallBtn}
-                        onClick={() => {
-                          setIsEditingPr(true);
-                          const prNum = activeTask.gitHubPrNumber ? String(activeTask.gitHubPrNumber) : '';
-                          const url = activeTask.gitHubPrUrl || '';
-                          setInlinePrNumber(prNum);
-                          setInlineUrl(url);
-                          const parsed = url ? url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/i) : null;
-                          const resolved = resolveOwnerRepo(activeTask);
-                          setInlineOwner(parsed ? parsed[1] : resolved.owner);
-                          setInlineRepo(parsed ? parsed[2] : resolved.repo);
-                        }}
-                        title="Change linked PR"
-                      >
-                        ✏️ Change
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.dangerSmallBtn}
-                        onClick={handleUnlinkPr}
-                        disabled={isUnlinkingPr}
-                        title="Unlink PR from this task"
-                      >
-                        ✕ Unlink
-                      </button>
-                    </div>
-                  )}
+                  <div className={styles.prActionBtnGroup}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setIsAddingPr((prev) => !prev)}
+                    >
+                      {isAddingPr ? '✕ Cancel' : '+ Link PR'}
+                    </Button>
+                  </div>
                 </div>
 
                 {githubSyncFeedback && (
@@ -632,11 +694,11 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                   </div>
                 )}
 
-                {/* If user is editing or changing the PR */}
-                {isEditingPr ? (
-                  <form onSubmit={handleLinkPrDirectly} className={styles.multiInputPrForm}>
+                {/* Form to link a new PR */}
+                {(isAddingPr || linkedPrs.length === 0) && (
+                  <form onSubmit={handleLinkPrDirectly} className={styles.multiInputPrForm} style={{ marginBottom: linkedPrs.length > 0 ? '12px' : 0 }}>
                     <p style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                      Change Linked GitHub Pull Request:
+                      {linkedPrs.length === 0 ? 'Link First GitHub Pull Request:' : 'Link Another GitHub Pull Request:'}
                     </p>
 
                     <div className={styles.prInputGroup}>
@@ -660,7 +722,6 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                           value={inlinePrNumber}
                           onChange={(e) => handleInlinePrNumberChange(e.target.value)}
                           required
-                          autoFocus
                         />
                       </div>
                       <div className={styles.prInputGroup}>
@@ -686,112 +747,78 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditingPr(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit" variant="primary" size="sm" disabled={isLinkingInlinePr}>
-                        {isLinkingInlinePr ? 'Saving...' : 'Update PR'}
-                      </Button>
-                    </div>
-                  </form>
-                ) : activeTask.gitHubPrNumber ? (
-                  <div className={styles.githubPrDetails}>
-                    <div className={styles.prMainRow}>
-                      <Badge
-                        variant={
-                          activeTask.gitHubPrIsMerged || activeTask.gitHubPrStatus?.toLowerCase() === 'merged'
-                            ? 'purple'
-                            : activeTask.gitHubPrStatus?.toLowerCase() === 'open'
-                            ? 'green'
-                            : 'red'
-                        }
-                      >
-                        {activeTask.gitHubPrIsMerged
-                          ? 'MERGED'
-                          : activeTask.gitHubPrStatus
-                          ? activeTask.gitHubPrStatus.toUpperCase()
-                          : 'LINKED'}
-                      </Badge>
-                      <a
-                        href={activeTask.gitHubPrUrl || `https://github.com/YadavAashutosh/DevTaskHub/pull/${activeTask.gitHubPrNumber}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.prExternalLink}
-                        title="Click to view pull request on GitHub"
-                      >
-                        PR #{activeTask.gitHubPrNumber} {activeTask.gitHubPrTitle ? `— ${activeTask.gitHubPrTitle}` : ''} ↗
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <form onSubmit={handleLinkPrDirectly} className={styles.multiInputPrForm}>
-                    <p style={{ margin: '0 0 6px 0', fontSize: '12px', fontWeight: 600, color: '#334155' }}>
-                      Link GitHub Pull Request:
-                    </p>
-
-                    <div className={styles.prInputGroup}>
-                      <label className={styles.prInputLabel}>Quick Paste Full PR URL (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. https://github.com/owner/repo/pull/7"
-                        className={styles.prInputField}
-                        value={inlineUrl}
-                        onChange={(e) => handleInlineUrlChange(e.target.value)}
-                      />
-                    </div>
-
-                    <div className={styles.inputGridRow}>
-                      <div className={styles.prInputGroup}>
-                        <label className={styles.prInputLabel}>PR Number *</label>
-                        <input
-                          type="number"
-                          placeholder="e.g. 7"
-                          className={styles.prInputField}
-                          value={inlinePrNumber}
-                          onChange={(e) => handleInlinePrNumberChange(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div className={styles.prInputGroup}>
-                        <label className={styles.prInputLabel}>Owner (Optional)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. YadavAashutosh"
-                          className={styles.prInputField}
-                          value={inlineOwner}
-                          onChange={(e) => handleInlineOwnerChange(e.target.value)}
-                        />
-                      </div>
-                      <div className={styles.prInputGroup}>
-                        <label className={styles.prInputLabel}>Repo (Optional)</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. DevTaskHub"
-                          className={styles.prInputField}
-                          value={inlineRepo}
-                          onChange={(e) => handleInlineRepoChange(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                      {linkedPrs.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setIsAddingPr(false)}
+                        >
+                          Cancel
+                        </Button>
+                      )}
                       <Button type="submit" variant="primary" size="sm" disabled={isLinkingInlinePr}>
                         {isLinkingInlinePr ? 'Connecting...' : 'Connect PR'}
                       </Button>
                     </div>
                   </form>
                 )}
+
+                {/* Multi-PR List Cards */}
+                {linkedPrs.length > 0 && (
+                  <div className={styles.prListContainer}>
+                    {linkedPrs.map((pr) => {
+                      const isMerged = pr.isMerged || pr.state?.toLowerCase() === 'merged';
+                      const isOpen = pr.state?.toLowerCase() === 'open';
+                      const badgeVariant = isMerged ? 'purple' : isOpen ? 'green' : 'red';
+                      const badgeLabel = isMerged ? 'MERGED' : (pr.state || 'OPEN').toUpperCase();
+
+                      return (
+                        <div key={pr.id || pr.pullRequestNumber} className={styles.prItemCard}>
+                          <div className={styles.prItemLeft}>
+                            <Badge variant={badgeVariant}>
+                              {badgeLabel}
+                            </Badge>
+                            <a
+                              href={pr.pullRequestUrl || `https://github.com/YadavAashutosh/DevTaskHub/pull/${pr.pullRequestNumber}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={styles.prItemTitle}
+                              title={pr.title || `PR #${pr.pullRequestNumber}`}
+                            >
+                              PR #{pr.pullRequestNumber} {pr.title ? `— ${pr.title}` : ''} ↗
+                            </a>
+                          </div>
+
+                          <div className={styles.prItemActions}>
+                            <button
+                              type="button"
+                              className={styles.secondarySmallBtn}
+                              disabled={syncingPrNumber === pr.pullRequestNumber}
+                              onClick={() => handleSyncSpecificPr(pr.pullRequestNumber)}
+                              title="Sync this PR with GitHub"
+                            >
+                              {syncingPrNumber === pr.pullRequestNumber ? 'Syncing...' : '🔄 Sync'}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.dangerSmallBtn}
+                              disabled={unlinkingPrNumber === pr.pullRequestNumber}
+                              onClick={() => handleUnlinkSpecificPr(pr.pullRequestNumber)}
+                              title="Unlink this PR"
+                            >
+                              {unlinkingPrNumber === pr.pullRequestNumber ? '...' : '✕ Unlink'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* GitHub Repository Live Metadata Card (Only when PR is linked) */}
-              {Boolean(activeTask.gitHubPrNumber) && repoDetails && (
+              {Boolean(activeTask.gitHubPrNumber || linkedPrs.length > 0) && repoDetails && (
                 <div className={styles.githubRepoCard}>
                   <div className={styles.repoCardHeader}>
                     <div className={styles.repoTitleBlock}>

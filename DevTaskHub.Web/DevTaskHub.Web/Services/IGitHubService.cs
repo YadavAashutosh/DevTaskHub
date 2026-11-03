@@ -29,8 +29,9 @@ namespace DevTaskHub.Web.Services
 
         /// <summary>
         /// Disassociates/unlinks the Pull Request from the task without deleting the task.
+        /// If prNumber is null, unlinks all PRs for the task; otherwise unlinks only the specified PR.
         /// </summary>
-        Task<bool> UnlinkPullRequestAsync(int taskId, CancellationToken cancellationToken = default);
+        Task<bool> UnlinkPullRequestAsync(int taskId, int? prNumber = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Fetches full repository details (stars, forks, issues, language, default branch).
@@ -46,5 +47,10 @@ namespace DevTaskHub.Web.Services
         /// Fetches recent commits for a repository.
         /// </summary>
         Task<List<GitHubCommitDto>> GetRepositoryCommitsAsync(string owner, string repo, int limit = 10, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Validates whether a GitHub user profile actually exists on GitHub (checks for HTTP 200 vs 404).
+        /// </summary>
+        Task<bool> VerifyUserExistsAsync(string username, CancellationToken cancellationToken = default);
     }
 }

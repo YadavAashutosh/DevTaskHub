@@ -169,3 +169,79 @@ Step numbering is strictly continuous and synchronized across the full stack:
   - Pruning: Removed unused `App.css` and removed empty `TaskDetailsPanel/` scaffolding directory.
 * **Verification:** `npm run build` (`tsc -b && vite build`) transformed 73 modules in 740ms with 0 compilation errors.
 * **Status:** Verified ✅
+
+---
+
+### [Step 50] 📊 Executive Dashboard Analytics & Real-Time Metrics
+* **Objective:** Deliver executive-level dashboard visibility with high-performance KPI cards, project progress summaries, priority distributions, and a live recent activity feed.
+* **Execution:**
+  - `DashboardApiController.cs` & `DashboardService.cs`: Implemented `GET /api/dashboard/stats` aggregating total tasks, completion rates, overdue counts, project progress summaries (`ProjectProgressSummaryDto`), and the 10 most recent status transitions (`RecentActivityDto`).
+  - `DashboardPage.tsx` & `DashboardPage.module.css`: Developed responsive grid with animated KPI cards, dynamic SVG progress bars, priority distribution breakdown, and live activity stream showing timestamps and actor details.
+* **Verification:** Verified via Swagger and browser UI; KPI metrics accurately calculate across real database tasks.
+* **Status:** Verified ✅
+
+---
+
+### [Step 51] 👥 Project Workspace & Team Member Management
+* **Objective:** Enable project lifecycle operations, archive state toggling, and multi-user membership management with role enforcement.
+* **Execution:**
+  - `ProjectsApiController.cs` & `ProjectService.cs`: Implemented project CRUD, member assignment (`POST /api/projects/{id}/members`), member removal (`DELETE /api/projects/{id}/members/{userId}`), and archive filtering.
+  - `ProjectsPage.tsx` & `ProjectsPage.module.css`: Project grid with status badges (`Active`, `Archived`), member roster avatars, "+ Add Member" modal with user search, and project creation form.
+* **Verification:** Added and removed project members with immediate UI state reflection and SQL Server persistence.
+* **Status:** Verified ✅
+
+---
+
+### [Step 52] 🐙 GitHub API Deep Integration & Repository Synchronization
+* **Objective:** Bridge DevTaskHub with GitHub for automated pull request linking, live sync, repository inspection, and recent commit feeds.
+* **Execution:**
+  - `GitHubApiController.cs` & `GitHubService.cs`: Integrated Octokit client for fetching live pull requests, repository metadata (stars, forks, open issues, default branch), commit logs, and manual/webhook synchronization.
+  - `TaskDetailDrawer.tsx`: Embedded GitHub integration pane displaying live PR status badges (`[OPEN]`, `[MERGED]`, `[CLOSED]`), target repository stats, and the last 5 commits with commit SHAs and author avatars.
+* **Verification:** Successfully linked live GitHub repository (`YadavAashutosh/DevTaskHub`) and synchronized pull request states.
+* **Status:** Verified ✅
+
+---
+
+### [Step 53] 🛡️ Role-Based Access Control & Developer Scoping
+* **Objective:** Enforce strict organizational data boundaries between Developers, Project Managers, and Admins.
+* **Execution:**
+  - `TasksApiController.cs` & `TaskService.cs`: Developers are strictly scoped to see only tasks assigned to them or tasks within projects where they are registered members.
+  - `ProjectsApiController.cs` & `ProjectService.cs`: Archived projects are automatically hidden from Developers while remaining accessible to Admins and Project Managers.
+  - Role-Based UI Guarding: Deletion actions (`✕ Delete Task`, `Delete Project`) are restricted exclusively to Admins.
+* **Verification:** E2E smoke tests verified that Developers cannot view unassigned non-member tasks or archived projects.
+* **Status:** Verified ✅
+
+---
+
+### [Step 54] 👑 Enterprise User Management & Security Blocking
+* **Objective:** Provide Admins with centralized identity management, dynamic role elevation, account suspension, and instant security lockout.
+* **Execution:**
+  - `UsersApiController.cs` & `UserService.cs`: Admin endpoints for `GET /api/users`, `PATCH /api/users/{id}/role`, `PATCH /api/users/{id}/status`, and `DELETE /api/users/{id}`.
+  - `AuthService.cs`: Enhanced authentication & token refresh pipeline to verify `IsActive`. Suspended or deactivated users are immediately blocked with `403 Forbidden` (`Account is deactivated. Please contact an administrator.`).
+  - `UsersPage.tsx` & `UsersPage.module.css`: Dedicated admin directory with search, role filters, status toggles (`Active` / `Inactive`), and role promotion selectors.
+* **Verification:** Automated tests verified account deactivation immediately revokes login and refresh token access.
+* **Status:** Verified ✅
+
+---
+
+### [Step 55] 🔍 Live GitHub Username Validation & Inline Priority Selector
+* **Objective:** Prevent dead GitHub handles in user profiles and enable rapid task priority adjustment directly from the task drawer.
+* **Execution:**
+  - `UsersApiController.cs` & `ProfilePage.tsx`: Integrated live Octokit existence checks on `PATCH /api/users/me/github`. If a username does not exist on GitHub, the API returns `400 Bad Request` with an explicit error (`GitHub user '{username}' does not exist.`), preventing phantom handles.
+  - `TaskDetailDrawer.tsx`: Replaced static priority display with a live interactive priority dropdown (`Low`, `Medium`, `High`, `Urgent`). Selecting a new priority instantly persists to SQL Server via `PUT /api/tasks/{id}` and updates the Kanban board.
+* **Verification:** Non-existent username `invalid-github-user-404-devtask` rejected with 400; valid priority change logged in task history.
+* **Status:** Verified ✅
+
+---
+
+### [Step 56] 🚀 Multi-PR Task Support & Real User Activity Attribution
+* **Objective:** Support real-world workflows where a single task spans multiple pull requests across repositories, and attribute activity log updates to the authenticated user.
+* **Execution:**
+  - Multi-PR Backend Architecture: Updated `GitHubService.cs` to preserve multiple pull requests per task in `dbo.TaskPullRequests`. Enhanced `DELETE /api/tasks/{taskId}/github/unlink?prNumber={prNumber}` for targeted unlinking of specific PRs without unlinking sibling PRs.
+  - `TaskDto.cs`: Added `PullRequests: List<TaskPullRequestDto>` to deliver all linked PRs in a single payload.
+  - Multi-PR Drawer UI (`TaskDetailDrawer.tsx`): Built multi-PR roster rendering distinct PR cards with individual badges (`[OPEN]`, `[MERGED]`, `[CLOSED]`), links, individual `🔄 Sync`, and `✕ Unlink` buttons, alongside a `+ Link Another PR` expandable form.
+  - Multi-PR Kanban Cards (`TaskCard.tsx`): Updated card badges to render multiple GitHub PR chips directly on the board.
+  - Real User Attribution: Passed `GetCurrentUserId()` from JWT claims into `TasksApiController` (`CreateTaskAsync` and `UpdateTaskAsync`) to record `ChangedByUserId` in `dbo.TaskStatusHistories`. The Recent Activity Stream now displays the authenticated user's name (e.g. `admin@devtask.com`) instead of the generic fallback `Developer`.
+  - React Rules of Hooks Fix: Restructured hook declarations in `TaskDetailDrawer.tsx` to ensure all `useState` calls reside above conditional guard clauses, eliminating render cycle crashes.
+* **Verification:** Full-stack automated E2E smoke test (`e2e_smoke_test.ps1`) executed with **18 / 18 tests passing**; xUnit test suite passed with **11 / 11 tests passing**.
+* **Status:** Verified ✅

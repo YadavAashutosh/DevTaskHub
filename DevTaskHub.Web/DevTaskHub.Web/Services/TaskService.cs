@@ -1,5 +1,6 @@
 using DevTaskHub.Web.Data;
 using DevTaskHub.Web.DTOs.Common;
+using DevTaskHub.Web.DTOs.Github;
 using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Models;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,14 @@ namespace DevTaskHub.Web.Services
                 .Include(t => t.PullRequests)
                 .Where(t => t.DeletedAtUtc == null)
                 .AsNoTracking();
+
+            // 1b. Role-Based Scoping: Developer only sees tasks where assigned OR where they are a project member!
+            if (string.Equals(parameters.RequestingUserRole, "Developer", StringComparison.OrdinalIgnoreCase)
+                && parameters.RequestingUserId.HasValue && parameters.RequestingUserId.Value > 0)
+            {
+                var devId = parameters.RequestingUserId.Value;
+                query = query.Where(t => t.AssignedUserId == devId || (t.Project != null && t.Project.Members.Any(m => m.UserId == devId)));
+            }
 
             // 2. Filtering by ProjectId
             if (parameters.ProjectId.HasValue)
@@ -89,6 +98,17 @@ namespace DevTaskHub.Web.Services
                     GitHubPrUrl = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.PullRequestUrl).FirstOrDefault(),
                     GitHubPrTitle = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.Title).FirstOrDefault(),
                     GitHubPrIsMerged = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => (bool?)p.IsMerged).FirstOrDefault(),
+                    PullRequests = t.PullRequests.Select(p => new TaskPullRequestDto
+                    {
+                        Id = p.Id,
+                        TaskId = p.TaskId,
+                        PullRequestNumber = p.PullRequestNumber,
+                        PullRequestUrl = p.PullRequestUrl,
+                        Title = p.Title,
+                        State = p.State,
+                        IsMerged = p.IsMerged,
+                        LastSyncedAtUtc = p.LastSyncedAtUtc
+                    }).ToList(),
                     DueDate = t.DueDate,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
@@ -123,6 +143,17 @@ namespace DevTaskHub.Web.Services
                     GitHubPrUrl = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.PullRequestUrl).FirstOrDefault(),
                     GitHubPrTitle = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => p.Title).FirstOrDefault(),
                     GitHubPrIsMerged = t.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).Select(p => (bool?)p.IsMerged).FirstOrDefault(),
+                    PullRequests = t.PullRequests.Select(p => new TaskPullRequestDto
+                    {
+                        Id = p.Id,
+                        TaskId = p.TaskId,
+                        PullRequestNumber = p.PullRequestNumber,
+                        PullRequestUrl = p.PullRequestUrl,
+                        Title = p.Title,
+                        State = p.State,
+                        IsMerged = p.IsMerged,
+                        LastSyncedAtUtc = p.LastSyncedAtUtc
+                    }).ToList(),
                     DueDate = t.DueDate,
                     CreatedAt = t.CreatedAt,
                     UpdatedAt = t.UpdatedAt,
@@ -161,6 +192,17 @@ namespace DevTaskHub.Web.Services
                 GitHubPrUrl = latestPr?.PullRequestUrl,
                 GitHubPrTitle = latestPr?.Title,
                 GitHubPrIsMerged = latestPr?.IsMerged,
+                PullRequests = task.PullRequests.Select(p => new TaskPullRequestDto
+                {
+                    Id = p.Id,
+                    TaskId = p.TaskId,
+                    PullRequestNumber = p.PullRequestNumber,
+                    PullRequestUrl = p.PullRequestUrl,
+                    Title = p.Title,
+                    State = p.State,
+                    IsMerged = p.IsMerged,
+                    LastSyncedAtUtc = p.LastSyncedAtUtc
+                }).ToList(),
                 DueDate = task.DueDate,
                 CreatedAt = task.CreatedAt,
                 UpdatedAt = task.UpdatedAt,
@@ -173,8 +215,33 @@ namespace DevTaskHub.Web.Services
             };
         }
 
-        public async Task<TaskDto> CreateTaskAsync(CreateTaskDto dto)
+        public async Task<TaskDto> CreateTaskAsync(CreateTaskDto dto, int? userId = null, string? userRole = null)
         {
+            if (string.Equals(userRole, "Developer", StringComparison.OrdinalIgnoreCase) && userId.HasValue && userId.Value > 0)
+            {
+                var isMember = await _context.ProjectMembers.AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.UserId == userId.Value);
+                if (!isMember)
+                {
+                    throw new UnauthorizedAccessException("Developers can only add tasks to projects where they are an assigned member.");
+                }
+
+                // If developer did not explicitly choose an assignee, default to assigning to themselves
+                if (!dto.AssignedUserId.HasValue || dto.AssignedUserId.Value <= 0)
+                {
+                    dto.AssignedUserId = userId.Value;
+                }
+            }
+
+            // STRICT ASSIGNEE SCOPING: A task can ONLY be assigned to an active member of that project!
+            if (dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
+            {
+                var isAssigneeMember = await _context.ProjectMembers
+                    .AnyAsync(pm => pm.ProjectId == dto.ProjectId && pm.UserId == dto.AssignedUserId.Value && pm.User.DeletedAtUtc == null && pm.User.IsActive);
+                if (!isAssigneeMember)
+                {
+                    throw new InvalidOperationException($"Cannot assign task. User with ID {dto.AssignedUserId.Value} is not an assigned member of this project.");
+                }
+            }
             var taskEntity = new TaskItem
             {
                 Title = dto.Title,
@@ -201,6 +268,7 @@ namespace DevTaskHub.Web.Services
                     OldStatus = "None",
                     NewStatus = taskEntity.Status,
                     ChangeReason = "Task Created",
+                    ChangedByUserId = (userId.HasValue && userId.Value > 0) ? userId.Value : null,
                     ChangedAtUtc = DateTime.UtcNow
                 });
                 await _context.SaveChangesAsync();
@@ -236,7 +304,7 @@ namespace DevTaskHub.Web.Services
             return await GetTaskByIdAsync(taskEntity.Id) ?? new TaskDto { Id = taskEntity.Id, Title = taskEntity.Title };
         }
 
-        public async Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskDto dto)
+        public async Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskDto dto, int? userId = null)
         {
             var task = await _context.Tasks.FindAsync(id);
             if (task == null) return null;
@@ -252,6 +320,7 @@ namespace DevTaskHub.Web.Services
                         OldStatus = task.Status,
                         NewStatus = dto.Status,
                         ChangeReason = "Status Updated",
+                        ChangedByUserId = (userId.HasValue && userId.Value > 0) ? userId.Value : null,
                         ChangedAtUtc = DateTime.UtcNow
                     });
                 }
@@ -268,6 +337,17 @@ namespace DevTaskHub.Web.Services
             else
             {
                 task.CompletedAtUtc = null;
+            }
+
+            // STRICT ASSIGNEE SCOPING: A task can ONLY be assigned to an active member of that project!
+            if (dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
+            {
+                var isAssigneeMember = await _context.ProjectMembers
+                    .AnyAsync(pm => pm.ProjectId == task.ProjectId && pm.UserId == dto.AssignedUserId.Value && pm.User.DeletedAtUtc == null && pm.User.IsActive);
+                if (!isAssigneeMember)
+                {
+                    throw new InvalidOperationException($"Cannot assign task. User with ID {dto.AssignedUserId.Value} is not an assigned member of this project.");
+                }
             }
 
             task.Title = dto.Title;

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { TaskDto, TaskPriorityType, TaskStatusType } from '../../../types';
 import { Badge } from '../../common';
+import { useAuth } from '../../../hooks';
 import styles from './TaskCard.module.css';
 
 export interface TaskCardProps {
@@ -18,6 +19,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onOpenLinkPrModal,
   onCardClick
 }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+
   const getPriorityBadgeVariant = (priority: TaskPriorityType): 'red' | 'yellow' | 'neutral' => {
     switch (priority) {
       case 'High':
@@ -88,7 +92,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           </span>
         )}
 
-        {task.gitHubPrNumber ? (
+        {task.pullRequests && task.pullRequests.length > 0 ? (
+          task.pullRequests.map((pr) => {
+            const isMerged = pr.isMerged || pr.state?.toLowerCase() === 'merged';
+            const isOpen = pr.state?.toLowerCase() === 'open';
+            const variant = isMerged ? 'purple' : isOpen ? 'green' : 'red';
+            return (
+              <a
+                key={pr.id || pr.pullRequestNumber}
+                href={pr.pullRequestUrl || `https://github.com/YadavAashutosh/DevTaskHub/pull/${pr.pullRequestNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.prLink}
+                onClick={(e) => e.stopPropagation()}
+                title={pr.title ? `${pr.title} (Click to open on GitHub)` : `View GitHub PR #${pr.pullRequestNumber}`}
+              >
+                <Badge variant={variant}>
+                  <span className={styles.prIcon}>⎇</span> #{pr.pullRequestNumber}
+                </Badge>
+              </a>
+            );
+          })
+        ) : task.gitHubPrNumber ? (
           <a
             href={task.gitHubPrUrl || `https://github.com/dotnet/aspnetcore/pull/${task.gitHubPrNumber}`}
             target="_blank"
@@ -171,17 +196,19 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           >
             {getNextStatusLabel(task.status)}
           </button>
-          <button
-            type="button"
-            className={styles.deleteBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task.id);
-            }}
-            title="Delete task"
-          >
-            ✕
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              className={styles.deleteBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task.id);
+              }}
+              title="Delete task (Admin only)"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
     </div>

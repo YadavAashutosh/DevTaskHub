@@ -1,4 +1,4 @@
-﻿namespace DevTaskHub.Web.DTOs.Tasks
+namespace DevTaskHub.Web.DTOs.Tasks
 {
     public class TaskQueryParameters
     {
@@ -24,5 +24,9 @@
         // Sorting
         public string? SortBy { get; set; } = "createdAt"; // "title", "priority", "status", "dueDate", "createdAt"
         public bool IsAscending { get; set; } = false;      // Default newest first
+
+        // Internal Requesting Context for Scoping (set by TasksApiController)
+        public int? RequestingUserId { get; set; }
+        public string? RequestingUserRole { get; set; }
     }
 }

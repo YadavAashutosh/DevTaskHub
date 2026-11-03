@@ -25,5 +25,27 @@ export const usersService = {
     const response = await apiClient.patch('/users/me/github', { gitHubUsername });
     return response.data;
   },
-};
 
+  /**
+   * Updates a user's role (Admin only).
+   */
+  async updateUserRole(userId: number, role: string): Promise<UserDto> {
+    const response = await apiClient.patch<UserDto>(`/users/${userId}/role`, { role });
+    return response.data;
+  },
+
+  /**
+   * Toggles a user's active/deactivated status (Admin only).
+   */
+  async updateUserStatus(userId: number, isActive: boolean): Promise<UserDto> {
+    const response = await apiClient.patch<UserDto>(`/users/${userId}/status`, { isActive });
+    return response.data;
+  },
+
+  /**
+   * Soft-deletes a user (Admin only).
+   */
+  async deleteUser(userId: number): Promise<void> {
+    await apiClient.delete(`/users/${userId}`);
+  },
+};

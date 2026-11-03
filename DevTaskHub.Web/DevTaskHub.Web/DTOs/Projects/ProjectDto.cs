@@ -13,5 +13,6 @@ namespace DevTaskHub.Web.DTOs.Projects
         public int TotalTasks { get; set; }
         public int CompletedTasks { get; set; }
         public int TotalMembers { get; set; }
+        public List<ProjectMemberDto> Members { get; set; } = new();
     }
 }

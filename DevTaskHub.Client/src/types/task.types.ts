@@ -1,6 +1,8 @@
 export type TaskStatusType = 'Todo' | 'InProgress' | 'InReview' | 'Done';
 export type TaskPriorityType = 'Low' | 'Medium' | 'High';
 
+import type { TaskPullRequest } from './github.types';
+
 export interface TaskDto {
   id: number;
   title: string;
@@ -12,6 +14,7 @@ export interface TaskDto {
   gitHubPrUrl?: string | null;
   gitHubPrTitle?: string | null;
   gitHubPrIsMerged?: boolean | null;
+  pullRequests?: TaskPullRequest[];
   dueDate?: string | null;
   createdAt: string;
   updatedAt: string;

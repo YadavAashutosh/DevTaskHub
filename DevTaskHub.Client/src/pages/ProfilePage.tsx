@@ -12,6 +12,7 @@ export const ProfilePage: React.FC = () => {
   const [gitHubUsername, setGitHubUsername] = useState(authUser?.gitHubUsername || '');
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLatestProfile = async () => {
@@ -31,14 +32,18 @@ export const ProfilePage: React.FC = () => {
     e.preventDefault();
     setIsSaving(true);
     setFeedback(null);
+    setErrorMessage(null);
+
     try {
       await usersService.updateMyGitHubUsername(gitHubUsername.trim() || null);
       setProfile((prev) => (prev ? { ...prev, gitHubUsername: gitHubUsername.trim() || null } : prev));
       setIsEditingGitHub(false);
       setFeedback('GitHub username updated successfully!');
-      setTimeout(() => setFeedback(null), 3000);
-    } catch {
-      alert('Failed to update GitHub username.');
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      const msg = axiosErr?.response?.data?.message || 'Failed to update GitHub username.';
+      setErrorMessage(msg);
     } finally {
       setIsSaving(false);
     }
@@ -120,17 +125,23 @@ export const ProfilePage: React.FC = () => {
                   placeholder="e.g. YadavAashutosh"
                   className={styles.inputField}
                   value={gitHubUsername}
-                  onChange={(e) => setGitHubUsername(e.target.value)}
+                  onChange={(e) => {
+                    setGitHubUsername(e.target.value);
+                    if (errorMessage) setErrorMessage(null);
+                  }}
                   autoFocus
                 />
                 <Button type="submit" variant="primary" size="sm" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save'}
+                  {isSaving ? 'Validating...' : 'Save'}
                 </Button>
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={() => setIsEditingGitHub(false)}
+                  onClick={() => {
+                    setIsEditingGitHub(false);
+                    setErrorMessage(null);
+                  }}
                 >
                   Cancel
                 </Button>
@@ -144,7 +155,10 @@ export const ProfilePage: React.FC = () => {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={() => setIsEditingGitHub(true)}
+                  onClick={() => {
+                    setIsEditingGitHub(true);
+                    setErrorMessage(null);
+                  }}
                 >
                   ✏️ Edit
                 </Button>
@@ -152,6 +166,11 @@ export const ProfilePage: React.FC = () => {
             )}
           </div>
 
+          {errorMessage && (
+            <div style={{ color: '#dc2626', background: '#fee2e2', padding: '10px 14px', borderRadius: '6px', fontSize: '13px', marginTop: '10px', border: '1px solid #fecaca' }}>
+              ⚠️ {errorMessage}
+            </div>
+          )}
           {feedback && <div className={styles.feedbackSuccess}>{feedback}</div>}
         </div>
 
@@ -167,4 +186,3 @@ export const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
-

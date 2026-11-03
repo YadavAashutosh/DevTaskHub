@@ -220,3 +220,76 @@
   border-radius: 50%;
   display: block;
 }
+
+/* Filter controls and Admin Management Actions */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  background-color: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.statusDeactivated {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.adminActionsCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roleSelectInTable {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.toggleStatusBtn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  background: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.toggleStatusBtn:hover {
+  background: #f1f5f9;
+}
+
+.deleteUserBtn {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deleteUserBtn:hover {
+  background: #fee2e2;
+}

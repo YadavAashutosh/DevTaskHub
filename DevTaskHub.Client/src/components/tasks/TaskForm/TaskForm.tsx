@@ -24,7 +24,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   onCancel,
   projects = [],
   defaultProjectId,
-  users = [],
+  users: _users = [],
   isSubmitting = false,
 }) => {
   // Logged-in user context
@@ -39,7 +39,15 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatusType>('Todo');
   const [priority, setPriority] = useState<TaskPriorityType>('Medium');
-  const [assignedUserId, setAssignedUserId] = useState<number | ''>('');
+  const [assignedUserId, setAssignedUserId] = useState<number | ''>(
+    () => (user?.role === 'Developer' && currentUserId ? currentUserId : '')
+  );
+
+  useEffect(() => {
+    if (user?.role === 'Developer' && currentUserId && assignedUserId === '') {
+      setAssignedUserId(currentUserId);
+    }
+  }, [user, currentUserId]);
   const [dueDate, setDueDate] = useState('');
   const [gitHubPrInput, setGitHubPrInput] = useState('');
   const [error, setError] = useState('');
@@ -187,12 +195,27 @@ export const TaskForm: React.FC<TaskFormProps> = ({
               onChange={(e) => setAssignedUserId(e.target.value ? Number(e.target.value) : '')}
             >
               <option value="">👤 Unassigned</option>
-              {currentUserId && <option value={currentUserId}>⭐ Assign to Me ({user?.fullName || user?.email})</option>}
-              {users.map((u) => (
-                <option key={u.userId} value={u.userId}>
-                  {u.fullName || u.email} ({u.role})
-                </option>
-              ))}
+ {(() => {
+ const currentProj = projects.find((p) => p.id === Number(projectId));
+ const projectMembers = currentProj?.members && currentProj.members.length > 0
+ ? currentProj.members
+ : [];
+ const isCurrentUserInProject = projectMembers.some((m) => m.userId === currentUserId);
+ return (
+ <>
+ {currentUserId && isCurrentUserInProject && (
+ <option value={currentUserId}>⭐ Assign to Me ({user?.fullName || user?.email})</option>
+ )}
+ {projectMembers
+ .filter((m) => m.userId !== currentUserId)
+ .map((m) => (
+ <option key={m.userId} value={m.userId}>
+ {m.fullName || m.email} ({m.projectRole || m.role})
+ </option>
+ ))}
+ </>
+ );
+ })()}
             </select>
           </div>
 
