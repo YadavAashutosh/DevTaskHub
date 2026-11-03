@@ -22,5 +22,6 @@ namespace DevTaskHub.Web.DTOs.Tasks
         public DateTime? DueDate { get; set; }
 
         public int? AssignedUserId { get; set; }
+        public List<int>? AssignedUserIds { get; set; }
     }
 }

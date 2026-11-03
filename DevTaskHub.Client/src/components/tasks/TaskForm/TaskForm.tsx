@@ -39,13 +39,13 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatusType>('Todo');
   const [priority, setPriority] = useState<TaskPriorityType>('Medium');
-  const [assignedUserId, setAssignedUserId] = useState<number | ''>(
-    () => (user?.role === 'Developer' && currentUserId ? currentUserId : '')
-  );
+  const [assignedUserIds, setAssignedUserIds] = useState<number[]>(() => {
+    return user?.role === 'Developer' && currentUserId ? [currentUserId] : [];
+  });
 
   useEffect(() => {
-    if (user?.role === 'Developer' && currentUserId && assignedUserId === '') {
-      setAssignedUserId(currentUserId);
+    if (user?.role === 'Developer' && currentUserId && assignedUserIds.length === 0) {
+      setAssignedUserIds([currentUserId]);
     }
   }, [user, currentUserId]);
   const [dueDate, setDueDate] = useState('');
@@ -104,7 +104,8 @@ export const TaskForm: React.FC<TaskFormProps> = ({
       status,
       priority,
       projectId: Number(projectId),
-      assignedUserId: assignedUserId ? Number(assignedUserId) : undefined,
+      assignedUserId: assignedUserIds.length > 0 ? assignedUserIds[0] : undefined,
+      assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
       dueDate: dueDate || undefined,
       gitHubPrNumber: parsedPr,
     });
@@ -185,38 +186,65 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         {/* Assignee & Due Date Row */}
         <div className={styles.twoColRow}>
           <div className={styles.fieldGroup}>
-            <label htmlFor="task-assignee" className={styles.label}>
-              Assign To Team Member
+            <label className={styles.label}>
+              Assign To Team Member(s) {assignedUserIds.length > 0 ? `(${assignedUserIds.length} selected)` : ''}
             </label>
-            <select
-              id="task-assignee"
-              className={styles.select}
-              value={assignedUserId}
-              onChange={(e) => setAssignedUserId(e.target.value ? Number(e.target.value) : '')}
-            >
-              <option value="">👤 Unassigned</option>
- {(() => {
- const currentProj = projects.find((p) => p.id === Number(projectId));
- const projectMembers = currentProj?.members && currentProj.members.length > 0
- ? currentProj.members
- : [];
- const isCurrentUserInProject = projectMembers.some((m) => m.userId === currentUserId);
- return (
- <>
- {currentUserId && isCurrentUserInProject && (
- <option value={currentUserId}>⭐ Assign to Me ({user?.fullName || user?.email})</option>
- )}
- {projectMembers
- .filter((m) => m.userId !== currentUserId)
- .map((m) => (
- <option key={m.userId} value={m.userId}>
- {m.fullName || m.email} ({m.projectRole || m.role})
- </option>
- ))}
- </>
- );
- })()}
-            </select>
+            {(() => {
+              const currentProj = projects.find((p) => p.id === Number(projectId));
+              const projectMembers = currentProj?.members && currentProj.members.length > 0
+                ? currentProj.members
+                : [];
+              
+              if (projectMembers.length === 0) {
+                return (
+                  <div style={{ fontSize: '12px', color: '#64748b', padding: '8px', border: '1px dashed #cbd5e1', borderRadius: '6px' }}>
+                    No members assigned to this project yet.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                  {projectMembers.map((m) => {
+                    const isSelected = assignedUserIds.includes(m.userId);
+                    const isMe = m.userId === currentUserId;
+                    return (
+                      <button
+                        key={m.userId}
+                        type="button"
+                        onClick={() => {
+                          setAssignedUserIds((prev) =>
+                            prev.includes(m.userId)
+                              ? prev.filter((id) => id !== m.userId)
+                              : [...prev, m.userId]
+                          );
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 10px',
+                          borderRadius: '16px',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                          backgroundColor: isSelected ? '#eff6ff' : '#ffffff',
+                          color: isSelected ? '#1d4ed8' : '#334155',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span>{isSelected ? '✓' : '+'}</span>
+                        <span>{isMe ? `⭐ ${m.fullName || m.email} (You)` : (m.fullName || m.email)}</span>
+                        <span style={{ fontSize: '10px', color: isSelected ? '#3b82f6' : '#94a3b8' }}>
+                          ({m.projectRole || m.role})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
 
           <div className={styles.fieldGroup}>

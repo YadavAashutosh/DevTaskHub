@@ -28,6 +28,8 @@ export const ProjectsPage: React.FC = () => {
   const isDeveloper = user?.role?.toLowerCase() === 'developer';
   const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Archived' | 'Completed'>('All');
   const availableFilters: Array<'All' | 'Active' | 'Archived' | 'Completed'> = isDeveloper ? ['All', 'Active', 'Completed'] : ['All', 'Active', 'Archived', 'Completed'];
+  type ProjectSortOption = 'name' | 'tasks-desc' | 'members-desc' | 'newest';
+  const [sortBy, setSortBy] = useState<ProjectSortOption>('name');
 
   // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,17 +96,33 @@ export const ProjectsPage: React.FC = () => {
     if (statusFilter !== 'All') {
       list = list.filter((p) => (p.status || 'Active').toLowerCase() === statusFilter.toLowerCase());
     }
-    if (!debouncedSearch.trim()) return list;
-    const q = debouncedSearch.toLowerCase();
-    return list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.projectKey.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.gitHubRepoName?.toLowerCase().includes(q) ||
-        p.gitHubRepoOwner?.toLowerCase().includes(q)
-    );
-  }, [projects, statusFilter, debouncedSearch]);
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.projectKey.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.gitHubRepoName?.toLowerCase().includes(q) ||
+          p.gitHubRepoOwner?.toLowerCase().includes(q)
+      );
+    }
+
+    return list.slice().sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'tasks-desc':
+          return (b.totalTasks || 0) - (a.totalTasks || 0);
+        case 'members-desc':
+          return ((b.totalMembers || b.members?.length || 0) - (a.totalMembers || a.members?.length || 0));
+        case 'newest':
+          return b.id - a.id;
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  }, [projects, statusFilter, debouncedSearch, sortBy]);
 
   const handleFetchUserRepos = async () => {
     if (!repoLookupUsername.trim()) return;
@@ -323,18 +341,44 @@ export const ProjectsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Project Status Filter Tabs */}
-      <div className={styles.filterTabs}>
-        {availableFilters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            className={`${styles.filterTabBtn} ${statusFilter === f ? styles.filterTabBtnActive : ''}`}
-            onClick={() => setStatusFilter(f)}
+      {/* Project Status Filter Tabs & Sort */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+        <div className={styles.filterTabs}>
+          {availableFilters.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`${styles.filterTabBtn} ${statusFilter === f ? styles.filterTabBtnActive : ''}`}
+              onClick={() => setStatusFilter(f)}
+            >
+              {f} Projects
+            </button>
+          ))}
+        </div>
+
+        {/* Project Sorting Dropdown */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#ffffff',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#334155',
+              cursor: 'pointer'
+            }}
+            title="Sort projects"
           >
-            {f} Projects
-          </button>
-        ))}
+            <option value="name">↕ Sort: Name (A → Z)</option>
+            <option value="tasks-desc">↕ Sort: Most Tasks</option>
+            <option value="members-desc">↕ Sort: Most Members</option>
+            <option value="newest">↕ Sort: Newest First</option>
+          </select>
+        </div>
       </div>
 
       {/* Content */}

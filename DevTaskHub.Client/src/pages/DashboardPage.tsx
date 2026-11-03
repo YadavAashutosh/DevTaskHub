@@ -10,6 +10,15 @@ export const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Sorting & Filtering State
+  type ProjectProgressSort = 'completion-desc' | 'completion-asc' | 'tasks-desc' | 'name-asc';
+  const [projectSort, setProjectSort] = useState<ProjectProgressSort>('completion-desc');
+
+  type ActivityFilterType = 'All' | 'Status' | 'Comment';
+  const [activityFilter, setActivityFilter] = useState<ActivityFilterType>('All');
+  type ActivitySortType = 'newest' | 'oldest';
+  const [activitySort, setActivitySort] = useState<ActivitySortType>('newest');
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -34,6 +43,41 @@ export const DashboardPage: React.FC = () => {
       controller.abort();
     };
   }, []);
+
+  // Derived sorted projects
+  const sortedProjects = React.useMemo(() => {
+    if (!stats?.projectSummaries) return [];
+    return stats.projectSummaries.slice().sort((a, b) => {
+      switch (projectSort) {
+        case 'completion-desc':
+          return b.completionRate - a.completionRate;
+        case 'completion-asc':
+          return a.completionRate - b.completionRate;
+        case 'tasks-desc':
+          return b.totalTasks - a.totalTasks;
+        case 'name-asc':
+          return a.projectName.localeCompare(b.projectName);
+        default:
+          return 0;
+      }
+    });
+  }, [stats?.projectSummaries, projectSort]);
+
+  // Derived filtered & sorted activity
+  const filteredActivity = React.useMemo(() => {
+    if (!stats?.recentActivity) return [];
+    let list = stats.recentActivity;
+    if (activityFilter === 'Comment') {
+      list = list.filter((act) => act.type === 'Comment');
+    } else if (activityFilter === 'Status') {
+      list = list.filter((act) => act.type !== 'Comment');
+    }
+    return list.slice().sort((a, b) => {
+      const timeA = new Date(a.timestampUtc).getTime();
+      const timeB = new Date(b.timestampUtc).getTime();
+      return activitySort === 'newest' ? timeB - timeA : timeA - timeB;
+    });
+  }, [stats?.recentActivity, activityFilter, activitySort]);
 
   const formatRelativeTime = (timestampUtc: string) => {
     try {
@@ -142,20 +186,40 @@ export const DashboardPage: React.FC = () => {
       <div className={styles.mainGrid}>
         {/* Left Column: Project Progress */}
         <section className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
+          <div className={styles.sectionHeader} style={{ flexWrap: 'wrap', gap: '8px' }}>
             <h3 className={styles.sectionTitle}>
               <span>📁</span> Project Delivery Progress
             </h3>
-            <Link to="/projects" style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'none' }}>
-              View all →
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <select
+                value={projectSort}
+                onChange={(e) => setProjectSort(e.target.value as any)}
+                style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  backgroundColor: '#ffffff'
+                }}
+                title="Sort project progress"
+              >
+                <option value="completion-desc">↕ Completion (High → Low)</option>
+                <option value="completion-asc">↕ Completion (Low → High)</option>
+                <option value="tasks-desc">↕ Total Tasks</option>
+                <option value="name-asc">↕ Name (A → Z)</option>
+              </select>
+              <Link to="/projects" style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'none' }}>
+                View all →
+              </Link>
+            </div>
           </div>
 
           <div className={styles.projectList}>
-            {!stats?.projectSummaries || stats.projectSummaries.length === 0 ? (
+            {!sortedProjects || sortedProjects.length === 0 ? (
               <div className={styles.emptyState}>No projects active yet.</div>
             ) : (
-              stats.projectSummaries.map((p) => (
+              sortedProjects.map((p) => (
                 <div key={p.projectId} className={styles.projectItem}>
                   <div className={styles.projectTopRow}>
                     <div className={styles.projectTitleBlock}>
@@ -198,17 +262,52 @@ export const DashboardPage: React.FC = () => {
 
         {/* Right Column: Recent Activity Stream */}
         <section className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
+          <div className={styles.sectionHeader} style={{ flexWrap: 'wrap', gap: '8px' }}>
             <h3 className={styles.sectionTitle}>
               <span>⚡</span> Recent Activity Stream
             </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <select
+                value={activityFilter}
+                onChange={(e) => setActivityFilter(e.target.value as any)}
+                style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  backgroundColor: '#ffffff'
+                }}
+                title="Filter activity type"
+              >
+                <option value="All">All Activity</option>
+                <option value="Status">Status Updates</option>
+                <option value="Comment">Comments Only</option>
+              </select>
+              <select
+                value={activitySort}
+                onChange={(e) => setActivitySort(e.target.value as any)}
+                style={{
+                  fontSize: '11px',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  color: '#334155',
+                  backgroundColor: '#ffffff'
+                }}
+                title="Sort activity by time"
+              >
+                <option value="newest">↕ Newest First</option>
+                <option value="oldest">↕ Oldest First</option>
+              </select>
+            </div>
           </div>
 
           <div className={styles.activityList}>
-            {!stats?.recentActivity || stats.recentActivity.length === 0 ? (
-              <div className={styles.emptyState}>No recent activity logged yet.</div>
+            {!filteredActivity || filteredActivity.length === 0 ? (
+              <div className={styles.emptyState}>No matching activity logged yet.</div>
             ) : (
-              stats.recentActivity.map((act) => (
+              filteredActivity.map((act) => (
                 <div key={`${act.type}-${act.id}`} className={styles.activityItem}>
                   <div
                     className={`${styles.activityIconCol} ${

@@ -77,9 +77,18 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
   const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
 
-  const handleAssigneeSelectChange = async (newUserIdStr: string) => {
+  const activeAssignees = activeTask?.assignees && activeTask.assignees.length > 0
+    ? activeTask.assignees
+    : (activeTask?.assignedUserId ? [{
+        userId: activeTask.assignedUserId,
+        fullName: activeTask.assignedUserFullName || '',
+        email: activeTask.assignedUserEmail || '',
+        role: 'Developer' as const,
+        gitHubUsername: activeTask.assignedUserGitHubUsername
+      }] : []);
+
+  const updateTaskAssignees = async (assigneeIds: number[]) => {
     if (!activeTask) return;
-    const newUserId = newUserIdStr ? Number(newUserIdStr) : undefined;
     setIsUpdatingAssignee(true);
     try {
       const updated = await taskService.updateTask(activeTask.id, {
@@ -89,16 +98,39 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         priority: activeTask.priority,
         gitHubPrNumber: activeTask.gitHubPrNumber,
         dueDate: activeTask.dueDate || undefined,
-        assignedUserId: newUserId,
+        assignedUserId: assigneeIds.length > 0 ? assigneeIds[0] : undefined,
+        assignedUserIds: assigneeIds,
       });
       if (updated) {
         setCurrentTask(updated);
         if (onTaskUpdated) onTaskUpdated(updated);
       }
     } catch (err) {
-      console.error('Failed to update task assignee:', err);
+      console.error('Failed to update task assignees:', err);
     } finally {
       setIsUpdatingAssignee(false);
+    }
+  };
+
+  const handleAddAssignee = async (userId: number) => {
+    if (!activeTask) return;
+    const currentIds = activeAssignees.map((a) => a.userId);
+    if (currentIds.includes(userId)) return;
+    await updateTaskAssignees([...currentIds, userId]);
+  };
+
+  const handleRemoveAssignee = async (userId: number) => {
+    if (!activeTask) return;
+    const currentIds = activeAssignees.map((a) => a.userId);
+    const updatedIds = currentIds.filter((id) => id !== userId);
+    await updateTaskAssignees(updatedIds);
+  };
+
+  const handleAssigneeSelectChange = async (newUserIdStr: string) => {
+    if (!newUserIdStr) {
+      await updateTaskAssignees([]);
+    } else {
+      await handleAddAssignee(Number(newUserIdStr));
     }
   };
 
@@ -598,28 +630,87 @@ export const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </span>
             <span className={styles.metaDot}>•</span>
             <span className={styles.assigneeText}>
-              {activeTask.assignedUserGitHubUsername ? (
-                <img
-                  src={`https://github.com/${activeTask.assignedUserGitHubUsername}.png?size=32`}
-                  alt={activeTask.assignedUserFullName || activeTask.assignedUserEmail || ''}
-                  style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'cover', verticalAlign: 'middle', marginRight: '4px' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-              ) : (
-                <span style={{ marginRight: '4px' }}>👤</span>
-              )}
-              <span>{activeTask.assignedUserFullName || activeTask.assignedUserEmail || 'Unassigned'}</span>
-              {activeTask.assignedUserGitHubUsername && (
-                <a
-                  href={`https://github.com/${activeTask.assignedUserGitHubUsername}`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none', marginLeft: '4px' }}
-                >
-                  (@{activeTask.assignedUserGitHubUsername}) ↗
-                </a>
-              )}
+              <span>👥 {activeAssignees.length > 0 ? `${activeAssignees.length} assigned` : 'Unassigned'}</span>
             </span>
+          </div>
+
+          {/* Dedicated Multi-Assignee Roster */}
+          <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Assigned Members:</span>
+            {activeAssignees.map((a) => (
+              <span
+                key={a.userId}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '12px',
+                  backgroundColor: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: '#334155'
+                }}
+              >
+                {a.gitHubUsername ? (
+                  <img
+                    src={`https://github.com/${a.gitHubUsername}.png?size=24`}
+                    alt={a.fullName || a.email}
+                    style={{ width: '14px', height: '14px', borderRadius: '50%' }}
+                  />
+                ) : (
+                  <span>👤</span>
+                )}
+                <span>{a.fullName || a.email.split('@')[0]}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveAssignee(a.userId)}
+                  disabled={isUpdatingAssignee}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    fontSize: '11px',
+                    padding: '0 2px',
+                    marginLeft: '2px'
+                  }}
+                  title={`Remove ${a.fullName || a.email}`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+
+            {(() => {
+              const currentProj = projects.find((p) => p.id === activeTask.projectId);
+              const projectMembers = currentProj?.members || [];
+              const assignedUserIds = activeAssignees.map((a) => a.userId);
+              const unassignedMembers = projectMembers.filter((m) => !assignedUserIds.includes(m.userId));
+
+              if (unassignedMembers.length === 0) return null;
+
+              return (
+                <select
+                  className={styles.statusSelect}
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) handleAddAssignee(Number(e.target.value));
+                  }}
+                  disabled={isUpdatingAssignee}
+                  style={{ fontSize: '11px', padding: '2px 8px', height: 'auto', borderRadius: '12px' }}
+                >
+                  <option value="">+ Add Co-Assignee</option>
+                  {unassignedMembers.map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      + {m.fullName || m.email.split('@')[0]} ({m.projectRole || m.role})
+                    </option>
+                  ))}
+                </select>
+              );
+            })()}
+            {isUpdatingAssignee && <span style={{ fontSize: '11px', color: '#64748b' }}>⏳ Updating...</span>}
           </div>
         </div>
 

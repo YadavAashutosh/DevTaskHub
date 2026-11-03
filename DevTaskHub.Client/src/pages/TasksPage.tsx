@@ -37,6 +37,8 @@ export const TasksPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<'All' | TaskPriorityType>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | TaskStatusType>('All');
   const [isMineOnly, setIsMineOnly] = useState(false);
+  type TaskSortOption = 'newest' | 'oldest' | 'priority-desc' | 'priority-asc' | 'title-asc' | 'dueDate';
+  const [sortBy, setSortBy] = useState<TaskSortOption>('newest');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   // Modals
@@ -365,9 +367,9 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  // Derived filtered tasks for active project and search/priority/mine filters
+  // Derived filtered tasks for active project, search/priority/mine filters, and sorting
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    const list = tasks.filter((task) => {
       // Project filter
       if (selectedProjectId !== undefined && task.projectId !== selectedProjectId) {
         return false;
@@ -385,18 +387,45 @@ export const TasksPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
 
-      // Mine only filter: matches by assigned userId or email
+      // Mine only filter: matches primary assigned userId, email, or any co-assignee
       const matchesMine =
         !isMineOnly ||
         Boolean(
           user &&
             ((user.userId && task.assignedUserId === user.userId) ||
-              (user.email && task.assignedUserEmail?.toLowerCase() === user.email.toLowerCase()))
+              (user.email && task.assignedUserEmail?.toLowerCase() === user.email.toLowerCase()) ||
+              (user.userId && task.assignees?.some((a) => a.userId === user.userId)))
         );
 
       return matchesSearch && matchesPriority && matchesStatus && matchesMine;
     });
-  }, [tasks, selectedProjectId, debouncedSearch, priorityFilter, statusFilter, isMineOnly, user]);
+
+    return list.slice().sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return b.id - a.id;
+        case 'oldest':
+          return a.id - b.id;
+        case 'priority-desc': {
+          const map: Record<TaskPriorityType, number> = { High: 3, Medium: 2, Low: 1 };
+          return (map[b.priority] || 0) - (map[a.priority] || 0);
+        }
+        case 'priority-asc': {
+          const map: Record<TaskPriorityType, number> = { High: 3, Medium: 2, Low: 1 };
+          return (map[a.priority] || 0) - (map[b.priority] || 0);
+        }
+        case 'title-asc':
+          return a.title.localeCompare(b.title);
+        case 'dueDate': {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        default:
+          return b.id - a.id;
+      }
+    });
+  }, [tasks, selectedProjectId, debouncedSearch, priorityFilter, statusFilter, isMineOnly, sortBy, user]);
 
   return (
     <div className={styles.pageContainer}>
@@ -528,6 +557,23 @@ export const TasksPage: React.FC = () => {
                 <option value="InProgress">In Progress</option>
                 <option value="InReview">Review</option>
                 <option value="Done">Done</option>
+              </select>
+            </div>
+
+            {/* Sort filter */}
+            <div className={styles.selectWrapper}>
+              <select
+                className={styles.filterSelect}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                title="Sort tasks"
+              >
+                <option value="newest">↕ Sort: Newest First</option>
+                <option value="oldest">↕ Sort: Oldest First</option>
+                <option value="priority-desc">↕ Sort: Priority (High → Low)</option>
+                <option value="priority-asc">↕ Sort: Priority (Low → High)</option>
+                <option value="dueDate">↕ Sort: Due Date (Earliest)</option>
+                <option value="title-asc">↕ Sort: Title (A → Z)</option>
               </select>
             </div>
 

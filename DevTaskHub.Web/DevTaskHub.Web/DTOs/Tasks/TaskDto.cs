@@ -1,3 +1,4 @@
+using DevTaskHub.Web.DTOs.Auth;
 using DevTaskHub.Web.DTOs.Github;
 
 namespace DevTaskHub.Web.DTOs.Tasks
@@ -19,6 +20,7 @@ namespace DevTaskHub.Web.DTOs.Tasks
 
         // Multiple linked pull requests
         public List<TaskPullRequestDto> PullRequests { get; set; } = new();
+        public List<UserDto> Assignees { get; set; } = new();
 
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; }

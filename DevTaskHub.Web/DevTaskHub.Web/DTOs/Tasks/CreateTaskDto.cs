@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace DevTaskHub.Web.DTOs.Tasks
 {
@@ -26,5 +26,6 @@ namespace DevTaskHub.Web.DTOs.Tasks
         public int ProjectId { get; set; }
 
         public int? AssignedUserId { get; set; }
+        public List<int>? AssignedUserIds { get; set; }
     }
 }

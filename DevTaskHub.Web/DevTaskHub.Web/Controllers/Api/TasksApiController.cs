@@ -123,6 +123,14 @@ namespace DevTaskHub.Web.Controllers.Api
 
                 return Ok(updatedTask);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while updating Task {Id}", id);
