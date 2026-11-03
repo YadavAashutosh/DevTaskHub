@@ -162,8 +162,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
+
+// 🔥 Move these 2 lines UP here (before UseRouting)
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRouting();
 
 // 🌐 CORS must execute after Routing and before Authentication/Authorization
@@ -173,11 +177,7 @@ app.UseCors("DevTaskHubCorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 app.Run();
