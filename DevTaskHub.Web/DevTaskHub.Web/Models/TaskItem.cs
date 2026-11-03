@@ -50,5 +50,6 @@ namespace DevTaskHub.Web.Models
         public List<TaskComment> Comments { get; set; } = new();
         public List<TaskLabel> TaskLabels { get; set; } = new();
         public List<TaskPullRequest> PullRequests { get; set; } = new();
+        public List<TaskAssignee> Assignees { get; set; } = new();
     }
 }

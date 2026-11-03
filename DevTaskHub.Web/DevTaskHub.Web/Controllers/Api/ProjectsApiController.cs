@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DevTaskHub.Web.Data;
 using DevTaskHub.Web.DTOs.Projects;
 using DevTaskHub.Web.Models;
@@ -22,15 +23,35 @@ namespace DevTaskHub.Web.Controllers.Api
             _logger = logger;
         }
 
+        private int GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+            if (int.TryParse(claim, out var id)) return id;
+            return 0;
+        }
+
         /// <summary>
         /// Retrieves all active projects with real-time task and member statistics.
         /// Zero Seed Policy: Returns empty list if no projects exist in the database.
+        /// Developers only receive projects where they are assigned as members.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<ProjectDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetProjects()
         {
-            var projects = await _context.Projects
+            var query = _context.Projects
+                .Where(p => p.DeletedAtUtc == null);
+
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = GetCurrentUserId();
+
+            if (string.Equals(userRole, "Developer", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(p => p.Status != "Archived" && p.Members.Any(m => m.UserId == userId));
+            }
+
+            var projects = await query
                 .Where(p => p.DeletedAtUtc == null)
                 .AsNoTracking()
                 .Select(p => new ProjectDto
@@ -45,7 +66,20 @@ namespace DevTaskHub.Web.Controllers.Api
                     CreatedAt = p.CreatedAt,
                     TotalTasks = p.Tasks.Count(t => t.DeletedAtUtc == null),
                     CompletedTasks = p.Tasks.Count(t => t.DeletedAtUtc == null && t.Status == "Done"),
-                    TotalMembers = p.Members.Count(m => m.User.DeletedAtUtc == null && m.User.IsActive)
+                    TotalMembers = p.Members.Count(m => m.User.DeletedAtUtc == null && m.User.IsActive),
+                    Members = p.Members
+                        .Where(m => m.User.DeletedAtUtc == null && m.User.IsActive)
+                        .Select(m => new ProjectMemberDto
+                        {
+                            ProjectId = m.ProjectId,
+                            UserId = m.UserId,
+                            FullName = m.User.FullName ?? string.Empty,
+                            Email = m.User.Email,
+                            Role = m.User.Role,
+                            ProjectRole = m.ProjectRole,
+                            GitHubUsername = m.User.GitHubUsername,
+                            JoinedAtUtc = m.JoinedAtUtc
+                        }).ToList()
                 })
                 .ToListAsync();
 
@@ -75,7 +109,20 @@ namespace DevTaskHub.Web.Controllers.Api
                     CreatedAt = p.CreatedAt,
                     TotalTasks = p.Tasks.Count(t => t.DeletedAtUtc == null),
                     CompletedTasks = p.Tasks.Count(t => t.DeletedAtUtc == null && t.Status == "Done"),
-                    TotalMembers = p.Members.Count(m => m.User.DeletedAtUtc == null && m.User.IsActive)
+                    TotalMembers = p.Members.Count(m => m.User.DeletedAtUtc == null && m.User.IsActive),
+                    Members = p.Members
+                        .Where(m => m.User.DeletedAtUtc == null && m.User.IsActive)
+                        .Select(m => new ProjectMemberDto
+                        {
+                            ProjectId = m.ProjectId,
+                            UserId = m.UserId,
+                            FullName = m.User.FullName ?? string.Empty,
+                            Email = m.User.Email,
+                            Role = m.User.Role,
+                            ProjectRole = m.ProjectRole,
+                            GitHubUsername = m.User.GitHubUsername,
+                            JoinedAtUtc = m.JoinedAtUtc
+                        }).ToList()
                 })
                 .FirstOrDefaultAsync();
 

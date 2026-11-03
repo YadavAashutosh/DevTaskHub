@@ -259,9 +259,10 @@ namespace DevTaskHub.Web.Services
             }
 
             // 3. Remove stale PR links for this task
-            var obsoletePrs = await _context.TaskPullRequests
-                .Where(p => p.TaskId == taskId && p.PullRequestNumber != targetPrNumber)
-                .ToListAsync(cancellationToken);
+            // Multi-PR Support: Do not remove other PRs; link this PR alongside existing ones
+            var obsoletePrs = new List<TaskPullRequest>();
+
+
             if (obsoletePrs.Count > 0)
                 _context.TaskPullRequests.RemoveRange(obsoletePrs);
 
@@ -309,6 +310,7 @@ namespace DevTaskHub.Web.Services
                 .Where(p => p.TaskId == taskId)
                 .OrderByDescending(p => p.LastSyncedAtUtc)
                 .ToListAsync(cancellationToken);
+
         }
 
         // ---------------------------------------------------------------
@@ -388,7 +390,7 @@ namespace DevTaskHub.Web.Services
         // ---------------------------------------------------------------
         // Unlink PR from task
         // ---------------------------------------------------------------
-        public async Task<bool> UnlinkPullRequestAsync(int taskId, CancellationToken cancellationToken = default)
+        public async Task<bool> UnlinkPullRequestAsync(int taskId, int? prNumber = null, CancellationToken cancellationToken = default)
         {
             var task = await _context.Tasks
                 .Include(t => t.PullRequests)
@@ -396,10 +398,16 @@ namespace DevTaskHub.Web.Services
 
             if (task == null) return false;
 
-            if (task.PullRequests.Count > 0)
+            if (task.PullRequests.Count > 0 && !prNumber.HasValue)
                 _context.TaskPullRequests.RemoveRange(task.PullRequests);
 
-            task.GitHubPrNumber = null;
+            if (prNumber.HasValue)
+            {
+                var target = task.PullRequests.FirstOrDefault(p => p.PullRequestNumber == prNumber.Value);
+                if (target != null) { _context.TaskPullRequests.Remove(target); task.PullRequests.Remove(target); }
+            }
+            var latestRemaining = task.PullRequests.OrderByDescending(p => p.LastSyncedAtUtc).FirstOrDefault();
+            task.GitHubPrNumber = latestRemaining?.PullRequestNumber;
             task.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync(cancellationToken);
             return true;
@@ -577,7 +585,47 @@ namespace DevTaskHub.Web.Services
             {
                 _logger.LogError(ex, "Failed to fetch commits for {Owner}/{Repo}", owner, repo);
             }
-            return results;
+                        return results;
+        }
+
+        public async Task<bool> VerifyUserExistsAsync(string username, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(username)) return false;
+
+            var cleanUser = username.Trim();
+            var cacheKey = $"gh_user_exists_{cleanUser.ToLower()}";
+            if (_cache.TryGetValue(cacheKey, out bool cachedResult))
+            {
+                return cachedResult;
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("GitHubClient");
+                var request = BuildRequest($"users/{cleanUser}");
+                var response = await client.SendAsync(request, cancellationToken);
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    _cache.Set(cacheKey, false, TimeSpan.FromMinutes(10));
+                    return false;
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _cache.Set(cacheKey, true, TimeSpan.FromHours(1));
+                    return true;
+                }
+
+                EnsureGitHubSuccess(response, $"verify user {cleanUser}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not verify GitHub username {Username}", cleanUser);
+                return false;
+            }
         }
     }
 }

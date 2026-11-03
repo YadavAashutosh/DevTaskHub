@@ -25,6 +25,7 @@ namespace DevTaskHub.Web.Data
         public DbSet<TaskLabel> TaskLabels { get; set; }
 
         public DbSet<TaskPullRequest> TaskPullRequests { get; set; }
+        public DbSet<TaskAssignee> TaskAssignees { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -103,7 +104,20 @@ namespace DevTaskHub.Web.Data
                 .HasForeignKey(tl => tl.LabelId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 6. RefreshSession Index
+            // 6. TaskAssignees configuration
+            modelBuilder.Entity<TaskAssignee>()
+                .HasOne(ta => ta.Task)
+                .WithMany(t => t.Assignees)
+                .HasForeignKey(ta => ta.TaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TaskAssignee>()
+                .HasOne(ta => ta.User)
+                .WithMany()
+                .HasForeignKey(ta => ta.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 7. RefreshSession Index
             modelBuilder.Entity<RefreshSession>()
                 .HasIndex(rs => rs.TokenHash)
                 .IsUnique();

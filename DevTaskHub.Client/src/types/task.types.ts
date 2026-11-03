@@ -1,6 +1,9 @@
 export type TaskStatusType = 'Todo' | 'InProgress' | 'InReview' | 'Done';
 export type TaskPriorityType = 'Low' | 'Medium' | 'High';
 
+import type { TaskPullRequest } from './github.types';
+import type { UserDto } from './auth.types';
+
 export interface TaskDto {
   id: number;
   title: string;
@@ -12,6 +15,8 @@ export interface TaskDto {
   gitHubPrUrl?: string | null;
   gitHubPrTitle?: string | null;
   gitHubPrIsMerged?: boolean | null;
+  pullRequests?: TaskPullRequest[];
+  assignees?: UserDto[];
   dueDate?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +36,7 @@ export interface CreateTaskDto {
   projectId: number;
   gitHubPrNumber?: number | null;
   assignedUserId?: number | null;
+  assignedUserIds?: number[];
   dueDate?: string | null;
 }
 
@@ -41,6 +47,7 @@ export interface UpdateTaskDto {
   priority: TaskPriorityType;
   gitHubPrNumber?: number | null;
   assignedUserId?: number | null;
+  assignedUserIds?: number[];
   dueDate?: string | null;
 }
 

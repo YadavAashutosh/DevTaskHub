@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { TaskDto, CreateTaskDto, TaskStatusType, TaskPriorityType, ProjectDto, UserDto } from '../types';
 import { useDebounce, useAuth } from '../hooks';
 import { Button } from '../components/common';
@@ -37,6 +37,8 @@ export const TasksPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<'All' | TaskPriorityType>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | TaskStatusType>('All');
   const [isMineOnly, setIsMineOnly] = useState(false);
+  type TaskSortOption = 'newest' | 'oldest' | 'priority-desc' | 'priority-asc' | 'title-asc' | 'dueDate';
+  const [sortBy, setSortBy] = useState<TaskSortOption>('newest');
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   // Modals
@@ -74,8 +76,8 @@ export const TasksPage: React.FC = () => {
     return projects.find((p) => p.id === selectedProjectId);
   }, [projects, selectedProjectId]);
 
-  // Initial & Reset Data Fetching from Live Backend
-  const loadData = async () => {
+  // Initial & Reset Data Fetching from Live Backend (with AbortController)
+  const loadData = async (signal?: AbortSignal) => {
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -86,9 +88,10 @@ export const TasksPage: React.FC = () => {
           pageNumber: currentPage,
           pageSize,
           projectId: selectedProjectId,
-        }),
+        }, signal),
       ]);
 
+      if (signal?.aborted) return;
       setProjects(projectsData);
       setTasks(tasksResponse.data);
       setTotalCount(tasksResponse.totalRecords);
@@ -99,18 +102,23 @@ export const TasksPage: React.FC = () => {
         if (projectsData[0].gitHubRepoName) setLinkRepo(projectsData[0].gitHubRepoName);
       }
     } catch (err: unknown) {
+      if (signal?.aborted) return;
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
         'Unable to connect to live tasks API. Please verify backend is running on https://localhost:7092.';
       setErrorMessage(msg);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadData();
-    usersService.getUsers().then(setUsers).catch(() => setUsers([]));
+    const controller = new AbortController();
+    loadData(controller.signal);
+    usersService.getUsers(controller.signal).then(setUsers).catch(() => setUsers([]));
+    return () => controller.abort();
   }, [currentPage, pageSize, selectedProjectId]);
 
   // Filter Tasks by Project
@@ -173,33 +181,8 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  // Quick Column Advancement Handler
-  const handleToggleStatus = async (id: number) => {
-    const currentTask = tasks.find((t) => t.id === id);
-    if (!currentTask) return;
-
-    let nextStatus: TaskStatusType;
-    switch (currentTask.status) {
-      case 'Todo':
-        nextStatus = 'InProgress';
-        break;
-      case 'InProgress':
-        nextStatus = 'InReview';
-        break;
-      case 'InReview':
-        nextStatus = 'Done';
-        break;
-      case 'Done':
-      default:
-        nextStatus = 'Todo';
-        break;
-    }
-
-    await handleUpdateTaskStatus(id, nextStatus);
-  };
-
-  // Update Task Status
-  const handleUpdateTaskStatus = async (id: number, nextStatus: TaskStatusType) => {
+  // Update Task Status (useCallback optimized)
+  const handleUpdateTaskStatus = useCallback(async (id: number, nextStatus: TaskStatusType) => {
     const currentTask = tasks.find((t) => t.id === id);
     if (!currentTask) return;
 
@@ -240,10 +223,35 @@ export const TasksPage: React.FC = () => {
         'Failed to update task status on server. Rolled back.';
       setErrorMessage(msg);
     }
-  };
+  }, [tasks, drawerTask]);
 
-  // Delete Task Handler (Live DELETE /api/tasks/{id})
-  const handleDeleteTask = async (id: number) => {
+  // Quick Column Advancement Handler (useCallback optimized)
+  const handleToggleStatus = useCallback(async (id: number) => {
+    const currentTask = tasks.find((t) => t.id === id);
+    if (!currentTask) return;
+
+    let nextStatus: TaskStatusType;
+    switch (currentTask.status) {
+      case 'Todo':
+        nextStatus = 'InProgress';
+        break;
+      case 'InProgress':
+        nextStatus = 'InReview';
+        break;
+      case 'InReview':
+        nextStatus = 'Done';
+        break;
+      case 'Done':
+      default:
+        nextStatus = 'Todo';
+        break;
+    }
+
+    await handleUpdateTaskStatus(id, nextStatus);
+  }, [tasks, handleUpdateTaskStatus]);
+
+  // Delete Task Handler (Live DELETE /api/tasks/{id} - useCallback optimized)
+  const handleDeleteTask = useCallback(async (id: number) => {
     const backupTasks = [...tasks];
 
     // Optimistic removal
@@ -266,27 +274,27 @@ export const TasksPage: React.FC = () => {
         setErrorMessage('Failed to delete task from database. Operation rolled back.');
       }
     }
-  };
+  }, [tasks, drawerTask]);
 
-  // Open Slide-Over Drawer
-  const handleOpenDrawer = (task: TaskDto) => {
+  // Open Slide-Over Drawer (useCallback optimized)
+  const handleOpenDrawer = useCallback((task: TaskDto) => {
     setDrawerTask(task);
     setIsDrawerOpen(true);
-  };
+  }, []);
 
-  // Drawer Task Updated Callback
-  const handleDrawerTaskUpdated = (updatedTask: TaskDto) => {
+  // Drawer Task Updated Callback (useCallback optimized)
+  const handleDrawerTaskUpdated = useCallback((updatedTask: TaskDto) => {
     setDrawerTask(updatedTask);
     setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
-  };
+  }, []);
 
-  // Open Link PR Modal
-  const handleOpenLinkPrModal = (taskId: number) => {
+  // Open Link PR Modal (useCallback optimized)
+  const handleOpenLinkPrModal = useCallback((taskId: number) => {
     setLinkingTaskId(taskId);
     setLinkPrNumber('');
     if (currentProject?.gitHubRepoOwner) setLinkOwner(currentProject.gitHubRepoOwner);
     if (currentProject?.gitHubRepoName) setLinkRepo(currentProject.gitHubRepoName);
-  };
+  }, [currentProject]);
 
   // Submit Link PR to Backend
   const handleLinkPrSubmit = async (e: React.FormEvent) => {
@@ -359,9 +367,9 @@ export const TasksPage: React.FC = () => {
     }
   };
 
-  // Derived filtered tasks for active project and search/priority/mine filters
+  // Derived filtered tasks for active project, search/priority/mine filters, and sorting
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    const list = tasks.filter((task) => {
       // Project filter
       if (selectedProjectId !== undefined && task.projectId !== selectedProjectId) {
         return false;
@@ -379,12 +387,45 @@ export const TasksPage: React.FC = () => {
       // Status filter
       const matchesStatus = statusFilter === 'All' || task.status === statusFilter;
 
-      // Mine only filter
-      const matchesMine = !isMineOnly || (user?.email && task.assignedUserEmail?.toLowerCase() === user.email.toLowerCase());
+      // Mine only filter: matches primary assigned userId, email, or any co-assignee
+      const matchesMine =
+        !isMineOnly ||
+        Boolean(
+          user &&
+            ((user.userId && task.assignedUserId === user.userId) ||
+              (user.email && task.assignedUserEmail?.toLowerCase() === user.email.toLowerCase()) ||
+              (user.userId && task.assignees?.some((a) => a.userId === user.userId)))
+        );
 
       return matchesSearch && matchesPriority && matchesStatus && matchesMine;
     });
-  }, [tasks, selectedProjectId, debouncedSearch, priorityFilter, statusFilter, isMineOnly, user?.email]);
+
+    return list.slice().sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return b.id - a.id;
+        case 'oldest':
+          return a.id - b.id;
+        case 'priority-desc': {
+          const map: Record<TaskPriorityType, number> = { High: 3, Medium: 2, Low: 1 };
+          return (map[b.priority] || 0) - (map[a.priority] || 0);
+        }
+        case 'priority-asc': {
+          const map: Record<TaskPriorityType, number> = { High: 3, Medium: 2, Low: 1 };
+          return (map[a.priority] || 0) - (map[b.priority] || 0);
+        }
+        case 'title-asc':
+          return a.title.localeCompare(b.title);
+        case 'dueDate': {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        default:
+          return b.id - a.id;
+      }
+    });
+  }, [tasks, selectedProjectId, debouncedSearch, priorityFilter, statusFilter, isMineOnly, sortBy, user]);
 
   return (
     <div className={styles.pageContainer}>
@@ -412,7 +453,7 @@ export const TasksPage: React.FC = () => {
             <button
               type="button"
               className={styles.resetBoardBtn}
-              onClick={loadData}
+              onClick={() => loadData()}
               title="Reload live tasks and pull requests from database"
             >
               Reset board
@@ -516,6 +557,23 @@ export const TasksPage: React.FC = () => {
                 <option value="InProgress">In Progress</option>
                 <option value="InReview">Review</option>
                 <option value="Done">Done</option>
+              </select>
+            </div>
+
+            {/* Sort filter */}
+            <div className={styles.selectWrapper}>
+              <select
+                className={styles.filterSelect}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                title="Sort tasks"
+              >
+                <option value="newest">↕ Sort: Newest First</option>
+                <option value="oldest">↕ Sort: Oldest First</option>
+                <option value="priority-desc">↕ Sort: Priority (High → Low)</option>
+                <option value="priority-asc">↕ Sort: Priority (Low → High)</option>
+                <option value="dueDate">↕ Sort: Due Date (Earliest)</option>
+                <option value="title-asc">↕ Sort: Title (A → Z)</option>
               </select>
             </div>
 
@@ -708,6 +766,8 @@ export const TasksPage: React.FC = () => {
         }}
         onStatusChange={handleUpdateTaskStatus}
         onTaskUpdated={handleDrawerTaskUpdated}
+        users={users}
+        projects={projects}
       />
 
       {/* Modal Dialog for Creating Task */}

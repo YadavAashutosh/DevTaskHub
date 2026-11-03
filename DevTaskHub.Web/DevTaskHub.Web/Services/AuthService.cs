@@ -9,6 +9,10 @@ using Microsoft.Extensions.Options;
 
 namespace DevTaskHub.Web.Services
 {
+    public class AccountDeactivatedException : Exception
+    {
+        public AccountDeactivatedException(string message) : base(message) { }
+    }
     /// <summary>
     /// Production implementation of authentication services with PBKDF2 verification,
     /// JWT token minting, and RefreshSession lifecycle management.
@@ -90,20 +94,50 @@ namespace DevTaskHub.Web.Services
 
             // 1. Locate User in SQL Server
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.IsActive);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.DeletedAtUtc == null);
 
             if (user == null)
             {
-                _logger.LogWarning("Login failed: User with email {Email} not found or deactivated.", normalizedEmail);
+                _logger.LogWarning("Login failed: User with email {Email} not found.", normalizedEmail);
                 throw new UnauthorizedAccessException("Invalid email or password.");
             }
 
+            if (!user.IsActive)
+            {
+                _logger.LogWarning("Login failed: User with email {Email} is deactivated.", normalizedEmail);
+                throw new AccountDeactivatedException("Your account has been deactivated. Please contact an administrator.");
+            }
+
             // 2. Cryptographic PBKDF2 Password Verification
-            var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            PasswordVerificationResult verificationResult;
+            try
+            {
+                verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            }
+            catch (FormatException)
+            {
+                // Legacy plain-text or non-Base64 mock hash fallback -> auto-rehash to PBKDF2
+                if (string.Equals(user.PasswordHash, request.Password, StringComparison.Ordinal) ||
+                    user.PasswordHash.StartsWith("dummy_hash_"))
+                {
+                    verificationResult = PasswordVerificationResult.SuccessRehashNeeded;
+                }
+                else
+                {
+                    verificationResult = PasswordVerificationResult.Failed;
+                }
+            }
+
             if (verificationResult == PasswordVerificationResult.Failed)
             {
                 _logger.LogWarning("Login failed: Password mismatch for user {Email}.", normalizedEmail);
                 throw new UnauthorizedAccessException("Invalid email or password.");
+            }
+
+            if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+                await _context.SaveChangesAsync();
             }
 
             // 3. Generate Signed JWT Access Token

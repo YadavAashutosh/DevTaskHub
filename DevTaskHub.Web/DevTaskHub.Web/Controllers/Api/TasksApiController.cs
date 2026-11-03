@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DevTaskHub.Web.DTOs.Common;
 using DevTaskHub.Web.DTOs.Tasks;
 using DevTaskHub.Web.Services;
@@ -21,13 +22,29 @@ namespace DevTaskHub.Web.Controllers.Api
             _logger = logger;
         }
 
+        private int GetCurrentUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+            if (int.TryParse(claim, out var id)) return id;
+            return 0;
+        }
+
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirst(ClaimTypes.Role)?.Value ?? "Developer";
+        }
+
         /// <summary>
         /// Retrieves paginated, sorted, and filtered tasks using server-side deferred execution.
+        /// Developers only receive tasks for projects where they are assigned or members.
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(PagedResponse<TaskDto>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetTasks([FromQuery] TaskQueryParameters queryParameters)
         {
+            queryParameters.RequestingUserId = GetCurrentUserId();
+            queryParameters.RequestingUserRole = GetCurrentUserRole();
             var pagedTasks = await _taskService.GetTasksAsync(queryParameters);
             return Ok(pagedTasks);
         }
@@ -62,8 +79,21 @@ namespace DevTaskHub.Web.Controllers.Api
                 return BadRequest(new { message = $"Validation failed: {errors}" });
             }
 
-            var createdTask = await _taskService.CreateTaskAsync(dto);
-            return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            try
+            {
+                var createdTask = await _taskService.CreateTaskAsync(dto, userId > 0 ? userId : null, userRole);
+                return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         /// <summary>
@@ -84,13 +114,22 @@ namespace DevTaskHub.Web.Controllers.Api
 
             try
             {
-                var updatedTask = await _taskService.UpdateTaskAsync(id, dto);
+                var userId = GetCurrentUserId();
+                var updatedTask = await _taskService.UpdateTaskAsync(id, dto, userId > 0 ? userId : null);
                 if (updatedTask == null)
                 {
                     return NotFound(new { message = $"Cannot update task. Task with ID {id} was not found." });
                 }
 
                 return Ok(updatedTask);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {

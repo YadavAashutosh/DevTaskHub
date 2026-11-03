@@ -198,9 +198,9 @@ namespace DevTaskHub.Web.Controllers.Api
         [HttpDelete("tasks/{taskId:int}/github/unlink")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UnlinkPullRequest(int taskId, CancellationToken cancellationToken)
+        public async Task<IActionResult> UnlinkPullRequest(int taskId, [FromQuery] int? prNumber, CancellationToken cancellationToken)
         {
-            var unlinked = await _gitHubService.UnlinkPullRequestAsync(taskId, cancellationToken);
+            var unlinked = await _gitHubService.UnlinkPullRequestAsync(taskId, prNumber, cancellationToken);
             if (!unlinked)
             {
                 return NotFound(new { message = $"Task #{taskId} was not found." });

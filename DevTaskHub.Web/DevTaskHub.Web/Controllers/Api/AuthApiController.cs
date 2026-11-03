@@ -67,6 +67,11 @@ namespace DevTaskHub.Web.Controllers.Api
 
                 return Ok(response);
             }
+            catch (AccountDeactivatedException ex)
+            {
+                _logger.LogWarning("Deactivated login attempt: {Message}", ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning("Login attempt failed: {Message}", ex.Message);
@@ -99,6 +104,11 @@ namespace DevTaskHub.Web.Controllers.Api
                 SetRefreshTokenCookie(response.RefreshToken);
 
                 return Ok(response);
+            }
+            catch (AccountDeactivatedException ex)
+            {
+                _logger.LogWarning("Deactivated login attempt: {Message}", ex.Message);
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (UnauthorizedAccessException ex)
             {

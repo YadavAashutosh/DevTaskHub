@@ -15,6 +15,7 @@ export const getAccessToken = (): string | null => {
 // Central Axios instance pointing to Vite reverse proxy (/api -> https://localhost:7092)
 export const apiClient = axios.create({
   baseURL: '/api',
+  timeout: 15000,
   withCredentials: true, // Sends and receives HttpOnly refresh cookie
   headers: {
     'Content-Type': 'application/json',

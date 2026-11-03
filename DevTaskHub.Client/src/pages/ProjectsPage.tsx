@@ -25,6 +25,11 @@ export const ProjectsPage: React.FC = () => {
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const isPM = user?.role?.toLowerCase() === 'projectmanager';
   const canManageProjects = isAdmin || isPM;
+  const isDeveloper = user?.role?.toLowerCase() === 'developer';
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Archived' | 'Completed'>('All');
+  const availableFilters: Array<'All' | 'Active' | 'Archived' | 'Completed'> = isDeveloper ? ['All', 'Active', 'Completed'] : ['All', 'Active', 'Archived', 'Completed'];
+  type ProjectSortOption = 'name' | 'tasks-desc' | 'members-desc' | 'newest';
+  const [sortBy, setSortBy] = useState<ProjectSortOption>('name');
 
   // Create Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -87,17 +92,37 @@ export const ProjectsPage: React.FC = () => {
   }, []);
 
   const filteredProjects = useMemo(() => {
-    if (!debouncedSearch.trim()) return projects;
-    const q = debouncedSearch.toLowerCase();
-    return projects.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.projectKey.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.gitHubRepoName?.toLowerCase().includes(q) ||
-        p.gitHubRepoOwner?.toLowerCase().includes(q)
-    );
-  }, [projects, debouncedSearch]);
+    let list = projects;
+    if (statusFilter !== 'All') {
+      list = list.filter((p) => (p.status || 'Active').toLowerCase() === statusFilter.toLowerCase());
+    }
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.projectKey.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.gitHubRepoName?.toLowerCase().includes(q) ||
+          p.gitHubRepoOwner?.toLowerCase().includes(q)
+      );
+    }
+
+    return list.slice().sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'tasks-desc':
+          return (b.totalTasks || 0) - (a.totalTasks || 0);
+        case 'members-desc':
+          return ((b.totalMembers || b.members?.length || 0) - (a.totalMembers || a.members?.length || 0));
+        case 'newest':
+          return b.id - a.id;
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  }, [projects, statusFilter, debouncedSearch, sortBy]);
 
   const handleFetchUserRepos = async () => {
     if (!repoLookupUsername.trim()) return;
@@ -160,6 +185,18 @@ export const ProjectsPage: React.FC = () => {
       alert('Failed to create project. Please ensure Project Key is unique.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteProject = async (id: number, projName: string) => {
+    if (!isAdmin) return;
+    if (!window.confirm(`Are you sure you want to delete project "${projName}"? All associated tasks will also be removed.`)) return;
+    try {
+      await projectService.deleteProject(id);
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      alert(axiosErr?.response?.data?.message || 'Failed to delete project.');
     }
   };
 
@@ -304,6 +341,46 @@ export const ProjectsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Project Status Filter Tabs & Sort */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+        <div className={styles.filterTabs}>
+          {availableFilters.map((f) => (
+            <button
+              key={f}
+              type="button"
+              className={`${styles.filterTabBtn} ${statusFilter === f ? styles.filterTabBtnActive : ''}`}
+              onClick={() => setStatusFilter(f)}
+            >
+              {f} Projects
+            </button>
+          ))}
+        </div>
+
+        {/* Project Sorting Dropdown */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#ffffff',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#334155',
+              cursor: 'pointer'
+            }}
+            title="Sort projects"
+          >
+            <option value="name">↕ Sort: Name (A → Z)</option>
+            <option value="tasks-desc">↕ Sort: Most Tasks</option>
+            <option value="members-desc">↕ Sort: Most Members</option>
+            <option value="newest">↕ Sort: Newest First</option>
+          </select>
+        </div>
+      </div>
+
       {/* Content */}
       {isLoading ? (
         <div className={styles.loadingBox}>Loading projects...</div>
@@ -358,6 +435,16 @@ export const ProjectsPage: React.FC = () => {
                         title="Edit project details (Admin/PM only)"
                       >
                         ✏️ Edit
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        className={styles.deleteProjectBtn}
+                        onClick={() => handleDeleteProject(proj.id, proj.name)}
+                        title="Delete project (Admin only)"
+                      >
+                        🗑️
                       </button>
                     )}
                   </div>

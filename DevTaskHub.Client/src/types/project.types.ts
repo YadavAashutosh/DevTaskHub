@@ -10,6 +10,7 @@ export interface ProjectDto {
   totalTasks: number;
   completedTasks: number;
   totalMembers: number;
+  members?: ProjectMemberDto[];
 }
 
 export interface CreateProjectDto {

@@ -1,3 +1,6 @@
+using DevTaskHub.Web.DTOs.Auth;
+using DevTaskHub.Web.DTOs.Github;
+
 namespace DevTaskHub.Web.DTOs.Tasks
 {
     public class TaskDto
@@ -8,12 +11,16 @@ namespace DevTaskHub.Web.DTOs.Tasks
         public string Status { get; set; } = "Todo";
         public string Priority { get; set; } = "Medium";
         
-        // Live GitHub PR metadata from dbo.TaskPullRequests
+        // Primary / Latest GitHub PR metadata for backward compatibility
         public int? GitHubPrNumber { get; set; }
         public string? GitHubPrStatus { get; set; }
         public string? GitHubPrUrl { get; set; }
         public string? GitHubPrTitle { get; set; }
         public bool? GitHubPrIsMerged { get; set; }
+
+        // Multiple linked pull requests
+        public List<TaskPullRequestDto> PullRequests { get; set; } = new();
+        public List<UserDto> Assignees { get; set; } = new();
 
         public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; }

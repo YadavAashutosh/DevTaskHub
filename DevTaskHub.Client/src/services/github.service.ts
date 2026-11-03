@@ -25,10 +25,12 @@ export const githubService = {
   },
 
   /**
-   * Disassociates / unlinks the Pull Request from a sprint task
+   * Disassociates / unlinks the Pull Request from a sprint task.
+   * If prNumber is specified, unlinks only that PR; otherwise unlinks all.
    */
-  async unlinkPullRequest(taskId: number): Promise<void> {
-    await apiClient.delete(`/tasks/${taskId}/github/unlink`);
+  async unlinkPullRequest(taskId: number, prNumber?: number): Promise<void> {
+    const url = prNumber ? `/tasks/${taskId}/github/unlink?prNumber=${prNumber}` : `/tasks/${taskId}/github/unlink`;
+    await apiClient.delete(url);
   },
 
   /**

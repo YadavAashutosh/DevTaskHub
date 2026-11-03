@@ -24,9 +24,10 @@ export const taskService = {
   /**
    * Retrieves paginated, sorted, and filtered tasks from .NET API.
    */
-  async getTasks(params?: TaskQueryParams): Promise<PagedResponse<TaskDto>> {
+  async getTasks(params?: TaskQueryParams, signal?: AbortSignal): Promise<PagedResponse<TaskDto>> {
     const response = await apiClient.get<PagedResponse<TaskDto>>('/tasks', {
       params,
+      signal,
     });
     return response.data;
   },

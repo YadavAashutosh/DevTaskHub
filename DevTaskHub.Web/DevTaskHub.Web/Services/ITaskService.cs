@@ -10,8 +10,8 @@ namespace DevTaskHub.Web.Services
 
         Task<IEnumerable<TaskDto>> GetAllTasksAsync();
         Task<TaskDto?> GetTaskByIdAsync(int id);
-        Task<TaskDto> CreateTaskAsync(CreateTaskDto dto);
-        Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskDto dto);
+        Task<TaskDto> CreateTaskAsync(CreateTaskDto dto, int? userId = null, string? userRole = null);
+        Task<TaskDto?> UpdateTaskAsync(int id, UpdateTaskDto dto, int? userId = null);
         Task<bool> DeleteTaskAsync(int id);
         Task<List<TaskStatusHistoryDto>> GetTaskHistoryAsync(int taskId);
     }
